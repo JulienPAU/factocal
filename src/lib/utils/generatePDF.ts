@@ -14,6 +14,7 @@ import { logoStore } from "./logoStorage";
 import { formatDate, formatMoney } from "$lib/utils/formatters";
 import { calculateTotalWithoutTax } from "./calculations";
 import { getAppSettings } from "./settings";
+import { addLegalMentionsPage } from "$lib/components/LegalMentions";
 
 // Définir le type pour jsPDF avec autoTable
 interface JsPDFWithAutoTable extends jsPDF {
@@ -68,9 +69,12 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
 
   const doc = new jsPDF();
 
-  // Utilitaires pour le positionnement
-  const pageWidth = doc.internal.pageSize.getWidth();
+  // Variables de mise en page
   const margin = 20;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const lineHeight = 10;
+
+  // Utilitaires pour le positionnement
   let y = margin;
   const addSpace = (space: number) => {
     y += space;
@@ -355,6 +359,33 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     doc.text(splitNotes, margin, y);
   }
 
+  // Ajouter les notes et conditions
+  y += lineHeight * 2;
+
+  // Ajouter le mode de paiement s'il est spécifié
+  if (invoice.paymentMethod) {
+    doc.setFont("helvetica", "bold");
+    doc.text("Mode de paiement :", margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(invoice.paymentMethod, margin + 40, y);
+    y += lineHeight;
+  }
+
+  // Ajouter les notes s'il y en a
+  if (invoice.notes) {
+    doc.setFont("helvetica", "bold");
+    doc.text("Notes et conditions :", margin, y);
+    doc.setFont("helvetica", "normal");
+    y += lineHeight;
+
+    const splitNotes = doc.splitTextToSize(
+      invoice.notes,
+      pageWidth - margin * 2
+    );
+    doc.text(splitNotes, margin, y);
+    y += splitNotes.length * lineHeight;
+  }
+
   // Pied de page
   const pageHeight = doc.internal.pageSize.getHeight();
   doc.setFontSize(8);
@@ -369,5 +400,13 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
   );
 
   // Télécharger le PDF
+  // Ajouter la page de mentions légales avant de sauvegarder le PDF
+  try {
+    addLegalMentionsPage(doc, invoice.provider, invoice.documentType);
+  } catch (error) {
+    console.error("Erreur lors de l'ajout des mentions légales:", error);
+  }
+
+  // Sauvegarder le PDF
   doc.save(`${invoice.documentType}-${invoice.documentNumber}.pdf`);
 };

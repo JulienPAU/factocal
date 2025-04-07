@@ -6,7 +6,6 @@
   let logoInput: HTMLInputElement;
   let dragActive = false;
   let errorMessage = '';
-  let showSettings = false;
   
   // Initialiser le store du logo
   onMount(() => {
@@ -92,16 +91,6 @@
   const triggerLogoInput = () => {
     logoInput.click();
   };
-  
-  // Ouvrir/fermer les paramètres
-  const toggleSettings = () => {
-    showSettings = !showSettings;
-  };
-  
-  // Appliquer les changements
-  const applySettings = () => {
-    // No changes to apply
-  };
 </script>
 
 <div class="space-y-4">
@@ -112,7 +101,7 @@
         <img 
           src={$logoStore} 
           alt="Logo" 
-          style="width: 150px; height: auto; object-fit: contain;"
+          style="max-width: 150px; max-height: 75px; object-fit: contain;"
         />
         <button 
           type="button"
@@ -123,7 +112,7 @@
           ✕
         </button>
       </div>
-      <p class="text-sm text-gray-500">Le logo sera affiché sur vos factures avec une taille optimale.</p>
+      <p class="text-sm text-gray-500">Le logo sera affiché avec une taille optimale sur vos documents.</p>
       <input 
         bind:this={logoInput}
         type="file" 

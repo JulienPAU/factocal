@@ -18,9 +18,11 @@ export interface Provider {
   name: string;
   address: string;
   email: string;
+  phone?: string;
   siret: string;
   tvaNumber?: string;
-  phone?: string;
+  acceptedPayments?: string; // Modes de paiement acceptés
+  memberAga?: boolean; // Membre d'une association de gestion agréée
 }
 
 export interface Invoice {
@@ -41,6 +43,7 @@ export interface Invoice {
   // Pour la conversion devis -> facture
   quotationId?: string;
   convertedToInvoice?: boolean;
+  paymentMethod?: string; // Mode de paiement
 }
 
 // Utilitaires pour calculer les totaux

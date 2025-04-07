@@ -8,6 +8,8 @@
     import { calculateSubtotal, calculateTax, calculateTotal, calculateDiscount } from '$lib/types/invoice';
     import { generateDocumentNumber } from '$lib/utils/documentNumbering';
     import LogoUploader from '$lib/components/LogoUploader.svelte';
+    import InputValidation from '$lib/components/InputValidation.svelte';
+    import * as ValidationUtils from '$lib/components/ValidationUtils';
   
     // Mode édition ou création
     let editMode = false;
@@ -38,6 +40,18 @@
     let providerPhone = '';
     let providerSiret = '';
     let providerTvaNumber = '';
+    let providerMemberAga = false;
+    let providerAcceptedPayments = '';
+    
+    // Moyens de paiement acceptés (nouvelle façon avec cases à cocher)
+    let acceptedPaymentMethods = {
+      "Virement bancaire": false,
+      "Carte bancaire": false,
+      "Chèque": false,
+      "Espèces": false,
+      "PayPal": false,
+      "Prélèvement automatique": false
+    };
     
     // Prestations
     let items: Item[] = [
@@ -57,6 +71,7 @@
     let quotationId = '';
     let advancePayment = 0;
     let enableAdvancePayment = false;
+    let paymentMethod = '';
     
     // Message d'erreur
     let error = '';
@@ -106,6 +121,9 @@
           providerPhone = invoice.provider.phone || '';
           providerSiret = invoice.provider.siret;
           providerTvaNumber = invoice.provider.tvaNumber || '';
+          providerMemberAga = invoice.provider.memberAga || false;
+          providerAcceptedPayments = invoice.provider.acceptedPayments || '';
+          parseAcceptedPayments(providerAcceptedPayments);
           
           // Prestations
           items = [...invoice.items];
@@ -118,6 +136,7 @@
           quotationId = invoice.quotationId || '';
           advancePayment = invoice.advancePayment || 0;
           enableAdvancePayment = advancePayment > 0;
+          paymentMethod = invoice.paymentMethod || '';
         } else {
           // Le document n'a pas été trouvé
           error = 'Document non trouvé';
@@ -135,6 +154,9 @@
           providerPhone = savedProviderInfo.phone || '';
           providerSiret = savedProviderInfo.siret || '';
           providerTvaNumber = savedProviderInfo.tvaNumber || '';
+          providerMemberAga = savedProviderInfo.memberAga || false;
+          providerAcceptedPayments = savedProviderInfo.acceptedPayments || '';
+          parseAcceptedPayments(providerAcceptedPayments);
         } else {
           // Pré-remplir avec les informations du dernier document créé (pour le prestataire)
           const lastInvoice = [...$invoices].sort((a, b) => 
@@ -148,6 +170,9 @@
             providerPhone = lastInvoice.provider.phone || '';
             providerSiret = lastInvoice.provider.siret;
             providerTvaNumber = lastInvoice.provider.tvaNumber || '';
+            providerMemberAga = lastInvoice.provider.memberAga || false;
+            providerAcceptedPayments = lastInvoice.provider.acceptedPayments || '';
+            parseAcceptedPayments(providerAcceptedPayments);
           }
         }
       }
@@ -185,16 +210,96 @@
       enableAdvancePayment ? advancePayment : 0
     );
   
+    // Charger les moyens de paiement depuis la chaîne enregistrée
+    function parseAcceptedPayments(paymentsString: string) {
+      // Réinitialiser toutes les valeurs
+      Object.keys(acceptedPaymentMethods).forEach(key => {
+        acceptedPaymentMethods[key] = false;
+      });
+      
+      if (paymentsString) {
+        const methods = paymentsString.split(',').map(m => m.trim());
+        methods.forEach(method => {
+          if (method in acceptedPaymentMethods) {
+            acceptedPaymentMethods[method] = true;
+          }
+        });
+      }
+    }
+    
+    // Générer la chaîne de moyens de paiement à partir des cases cochées
+    function generateAcceptedPaymentsString(): string {
+      return Object.entries(acceptedPaymentMethods)
+        .filter(([_, checked]) => checked)
+        .map(([method, _]) => method)
+        .join(', ');
+    }
+    
+    // Mettre à jour la variable quand les cases changent
+    $: providerAcceptedPayments = generateAcceptedPaymentsString();
+  
     // Sauvegarder la facture ou le devis
     const saveInvoice = () => {
-      // Validation basique
-      if (!clientName || !clientEmail || !providerName || !providerSiret) {
-        alert('Veuillez remplir tous les champs obligatoires');
-        return;
+      // Validation avancée
+      let isValid = true;
+      const errorMessages = [];
+      
+      // Valider les informations du prestataire
+      if (!providerName) {
+        isValid = false;
+        errorMessages.push("Nom du prestataire requis");
       }
       
+      if (!providerAddress) {
+        isValid = false;
+        errorMessages.push("Adresse du prestataire requise");
+      }
+      
+      if (!providerEmail || !ValidationUtils.isValidEmail(providerEmail)) {
+        isValid = false;
+        errorMessages.push("Email du prestataire invalide");
+      }
+      
+      if (!ValidationUtils.isValidSiret(providerSiret)) {
+        isValid = false;
+        errorMessages.push("SIRET invalide (doit contenir 14 chiffres)");
+      }
+      
+      if (providerTvaNumber && !ValidationUtils.isValidVatNumber(providerTvaNumber)) {
+        isValid = false;
+        errorMessages.push("Numéro de TVA invalide");
+      }
+      
+      // Valider les informations client
+      if (!clientName) {
+        isValid = false;
+        errorMessages.push("Nom du client requis");
+      }
+      
+      if (!clientAddress) {
+        isValid = false;
+        errorMessages.push("Adresse du client requise");
+      }
+      
+      if (!clientEmail || !ValidationUtils.isValidEmail(clientEmail)) {
+        isValid = false;
+        errorMessages.push("Email du client invalide");
+      }
+      
+      if (clientPhone && !ValidationUtils.isValidPhone(clientPhone)) {
+        isValid = false;
+        errorMessages.push("Numéro de téléphone du client invalide");
+      }
+      
+      // Valider les items
       if (items.some(item => !item.description || item.quantity <= 0)) {
-        alert('Veuillez remplir correctement toutes les prestations');
+        isValid = false;
+        errorMessages.push("Toutes les prestations doivent avoir une description et une quantité > 0");
+      }
+      
+      // Si erreurs, afficher et arrêter
+      if (!isValid) {
+        alert(`Veuillez corriger les erreurs suivantes:\n\n${errorMessages.join("\n")}`);
         return;
       }
       
@@ -204,8 +309,10 @@
         address: providerAddress,
         email: providerEmail,
         phone: providerPhone,
-        siret: providerSiret,
-        tvaNumber: providerTvaNumber
+        siret: ValidationUtils.formatSiret(providerSiret), // Format SIRET
+        tvaNumber: providerTvaNumber ? ValidationUtils.formatVatNumber(providerTvaNumber) : '', // Format TVA
+        memberAga: providerMemberAga,
+        acceptedPayments: providerAcceptedPayments
       };
       
       localStorage.setItem('provider_info', JSON.stringify(providerInfo));
@@ -221,22 +328,25 @@
           name: clientName,
           address: clientAddress,
           email: clientEmail,
-          phone: clientPhone
+          phone: clientPhone ? ValidationUtils.formatPhone(clientPhone) : undefined
         },
         provider: {
           name: providerName,
           address: providerAddress,
           email: providerEmail,
-          phone: providerPhone,
-          siret: providerSiret,
-          tvaNumber: providerTvaNumber
+          phone: providerPhone ? ValidationUtils.formatPhone(providerPhone) : undefined,
+          siret: ValidationUtils.formatSiret(providerSiret),
+          tvaNumber: providerTvaNumber ? ValidationUtils.formatVatNumber(providerTvaNumber) : undefined,
+          memberAga: providerMemberAga,
+          acceptedPayments: providerAcceptedPayments
         },
         items,
         taxRate,
         discount: enableDiscount ? discount : undefined,
         notes,
         quotationId,
-        advancePayment: enableAdvancePayment ? advancePayment : undefined
+        advancePayment: enableAdvancePayment ? advancePayment : undefined,
+        paymentMethod
       };
       
       // Sauvegarder dans le store
@@ -340,7 +450,8 @@
               type="date" 
               bind:value={issueDate} 
               class="w-full p-2 border rounded-lg"
-            >
+              required
+            />
           </div>
           
           <!-- Date d'échéance -->
@@ -350,7 +461,8 @@
               type="date" 
               bind:value={dueDate} 
               class="w-full p-2 border rounded-lg"
-            >
+              required
+            />
           </div>
           
           <!-- Logo -->
@@ -371,12 +483,12 @@
           
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Nom / Entreprise</label>
-            <input 
-              type="text" 
-              bind:value={providerName} 
-              class="w-full p-2 border rounded-lg"
+            <InputValidation
+              type="text"
+              bind:value={providerName}
               placeholder="Votre nom ou nom d'entreprise"
-            >
+              required={true}
+            />
           </div>
           
           <div class="mb-4">
@@ -386,47 +498,76 @@
               class="w-full p-2 border rounded-lg"
               placeholder="Votre adresse complète"
               rows="2"
+              required
             ></textarea>
           </div>
           
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Email</label>
-            <input 
-              type="email" 
-              bind:value={providerEmail} 
-              class="w-full p-2 border rounded-lg"
+            <InputValidation
+              type="email"
+              bind:value={providerEmail}
               placeholder="votre@email.com"
-            >
+              required={true}
+            />
           </div>
           
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Téléphone (optionnel)</label>
-            <input 
-              type="tel" 
-              bind:value={providerPhone} 
-              class="w-full p-2 border rounded-lg"
+            <InputValidation
+              type="tel"
+              bind:value={providerPhone}
               placeholder="Votre numéro de téléphone"
-            >
+              required={false}
+              helpText="Format: 06 XX XX XX XX"
+            />
           </div>
           
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">SIRET</label>
-            <input 
-              type="text" 
-              bind:value={providerSiret} 
-              class="w-full p-2 border rounded-lg"
-              placeholder="Numéro SIRET"
-            >
+            <InputValidation
+              type="siret"
+              bind:value={providerSiret}
+              placeholder="Numéro SIRET (14 chiffres)"
+              required={true}
+              errorMessage="Le SIRET doit comporter 14 chiffres"
+            />
           </div>
           
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">N° TVA (optionnel)</label>
-            <input 
-              type="text" 
-              bind:value={providerTvaNumber} 
-              class="w-full p-2 border rounded-lg"
-              placeholder="Numéro de TVA intracommunautaire"
-            >
+            <InputValidation
+              type="vat"
+              bind:value={providerTvaNumber}
+              placeholder="Ex: FR 12 345678901"
+              required={false}
+              helpText="Format européen (ex: FR XX XXXXXXXXX)"
+            />
+          </div>
+          
+          <div class="mb-4">
+            <label class="flex items-center">
+              <input type="checkbox" bind:checked={providerMemberAga} class="form-checkbox h-5 w-5 text-blue-600">
+              <span class="ml-2">Membre d'une association agréée</span>
+            </label>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Moyens de paiement acceptés</label>
+            <div class="grid grid-cols-2 gap-2">
+              {#each Object.entries(acceptedPaymentMethods) as [method, checked]}
+                <label class="flex items-center">
+                  <input 
+                    type="checkbox" 
+                    bind:checked={acceptedPaymentMethods[method]} 
+                    class="form-checkbox h-5 w-5 text-blue-600">
+                  <span class="ml-2">{method}</span>
+                </label>
+              {/each}
+            </div>
+            <div class="text-xs text-gray-600 mt-1">
+              Ces informations apparaissent dans les mentions légales de vos documents PDF (page 2) et non sur la première page. Pour afficher un mode de paiement spécifique sur la première page, utilisez le champ "Mode de paiement" ci-dessous.
+            </div>
           </div>
         </div>
         
@@ -436,13 +577,12 @@
           
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Nom / Entreprise</label>
-            <input 
-              type="text" 
-              bind:value={clientName} 
-              class="w-full p-2 border rounded-lg"
+            <InputValidation
+              type="text"
+              bind:value={clientName}
               placeholder="Nom du client ou entreprise"
-              required
-            >
+              required={true}
+            />
           </div>
           
           <div class="mb-4">
@@ -458,23 +598,22 @@
           
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Email</label>
-            <input 
-              type="email" 
-              bind:value={clientEmail} 
-              class="w-full p-2 border rounded-lg"
+            <InputValidation
+              type="email"
+              bind:value={clientEmail}
               placeholder="client@email.com"
-              required
-            >
+              required={true}
+            />
           </div>
           
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Téléphone (optionnel)</label>
-            <input 
-              type="tel" 
-              bind:value={clientPhone} 
-              class="w-full p-2 border rounded-lg"
+            <InputValidation
+              type="tel"
+              bind:value={clientPhone}
               placeholder="Numéro de téléphone du client"
-            >
+              required={false}
+            />
           </div>
         </div>
       </div>
@@ -658,6 +797,23 @@
           {/if}
         </div>
       {/if}
+      
+      <!-- Mode de paiement -->
+      <div class="mb-6">
+        <label class="block text-gray-700 mb-2">Mode de paiement</label>
+        <select 
+          bind:value={paymentMethod} 
+          class="w-full p-2 border rounded-lg"
+        >
+          <option value="">Sélectionner un mode de paiement</option>
+          <option value="Virement bancaire">Virement bancaire</option>
+          <option value="Carte bancaire">Carte bancaire</option>
+          <option value="Chèque">Chèque</option>
+          <option value="Espèces">Espèces</option>
+          <option value="PayPal">PayPal</option>
+          <option value="Prélèvement automatique">Prélèvement automatique</option>
+        </select>
+      </div>
       
       <!-- Notes -->
       <div class="mb-6">

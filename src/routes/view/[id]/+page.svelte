@@ -226,24 +226,32 @@
         
         <!-- Dates -->
         <div class="bg-gray-50 p-3 sm:p-4 rounded mb-6">
-          <div>
-            <p class="mb-1">
-              <span class="font-semibold">Date d'émission:</span> 
-              {new Date(invoice.issueDate).toLocaleDateString('fr-FR')}
-            </p>
-            <p class="mb-1">
-              <span class="font-semibold">Date d'échéance:</span> 
-              {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}
-            </p>
-            
-            {#if invoice.documentType === 'facture' && invoice.quotationId}
-              <p>
-                <span class="font-semibold">Référence devis:</span> 
-                {invoice.quotationId}
-              </p>
-            {/if}
+          <div class="grid grid-cols-2 gap-2 mb-4">
+            <div>
+              <p class="text-sm text-gray-500">Date d'émission</p>
+              <p class="font-semibold">{new Date(invoice.issueDate).toLocaleDateString('fr-FR')}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Date d'échéance</p>
+              <p class="font-semibold">{new Date(invoice.dueDate).toLocaleDateString('fr-FR')}</p>
+            </div>
           </div>
+          
+          {#if invoice.documentType === 'facture' && invoice.quotationId}
+            <p>
+              <span class="font-semibold">Référence devis:</span> 
+              {invoice.quotationId}
+            </p>
+          {/if}
         </div>
+        
+        <!-- Mode de paiement -->
+        {#if invoice.paymentMethod}
+          <div class="bg-gray-50 p-3 sm:p-4 rounded mb-6">
+            <p class="text-sm text-gray-500">Mode de paiement</p>
+            <p class="font-semibold">{invoice.paymentMethod}</p>
+          </div>
+        {/if}
         
         <!-- Tableau des prestations -->
         <div class="mb-6">
