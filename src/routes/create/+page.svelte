@@ -213,30 +213,43 @@
     // Charger les moyens de paiement depuis la chaîne enregistrée
     function parseAcceptedPayments(paymentsString: string) {
       // Réinitialiser toutes les valeurs
-      Object.keys(acceptedPaymentMethods).forEach(key => {
+      for (const key of Object.keys(acceptedPaymentMethods)) {
         acceptedPaymentMethods[key] = false;
-      });
+      }
       
       if (paymentsString) {
         const methods = paymentsString.split(',').map(m => m.trim());
-        methods.forEach(method => {
+        for (const method of methods) {
           if (method in acceptedPaymentMethods) {
             acceptedPaymentMethods[method] = true;
           }
-        });
+        }
       }
     }
     
     // Générer la chaîne de moyens de paiement à partir des cases cochées
     function generateAcceptedPaymentsString(): string {
-      return Object.entries(acceptedPaymentMethods)
-        .filter(([_, checked]) => checked)
-        .map(([method, _]) => method)
-        .join(', ');
+      const selectedMethods = [];
+      for (const [method, checked] of Object.entries(acceptedPaymentMethods)) {
+        if (checked) {
+          selectedMethods.push(method);
+        }
+      }
+      return selectedMethods.join(', ');
     }
     
     // Mettre à jour la variable quand les cases changent
-    $: providerAcceptedPayments = generateAcceptedPaymentsString();
+    function updateAcceptedPayments() {
+      providerAcceptedPayments = generateAcceptedPaymentsString();
+      console.log('Moyens de paiement mis à jour:', providerAcceptedPayments);
+    }
+    
+    // Surveiller les changements dans les cases à cocher
+    $: {
+      if (typeof window !== 'undefined') {
+        updateAcceptedPayments();
+      }
+    }
   
     // Sauvegarder la facture ou le devis
     const saveInvoice = () => {
@@ -312,7 +325,7 @@
         siret: ValidationUtils.formatSiret(providerSiret), // Format SIRET
         tvaNumber: providerTvaNumber ? ValidationUtils.formatVatNumber(providerTvaNumber) : '', // Format TVA
         memberAga: providerMemberAga,
-        acceptedPayments: providerAcceptedPayments
+        acceptedPayments: generateAcceptedPaymentsString() // S'assurer d'utiliser la fonction ici
       };
       
       localStorage.setItem('provider_info', JSON.stringify(providerInfo));
@@ -338,7 +351,7 @@
           siret: ValidationUtils.formatSiret(providerSiret),
           tvaNumber: providerTvaNumber ? ValidationUtils.formatVatNumber(providerTvaNumber) : undefined,
           memberAga: providerMemberAga,
-          acceptedPayments: providerAcceptedPayments
+          acceptedPayments: generateAcceptedPaymentsString() // S'assurer d'utiliser la fonction ici aussi
         },
         items,
         taxRate,
@@ -560,6 +573,7 @@
                   <input 
                     type="checkbox" 
                     bind:checked={acceptedPaymentMethods[method]} 
+                    on:change={updateAcceptedPayments}
                     class="form-checkbox h-5 w-5 text-blue-600">
                   <span class="ml-2">{method}</span>
                 </label>
@@ -568,6 +582,7 @@
             <div class="text-xs text-gray-600 mt-1">
               Ces informations apparaissent dans les mentions légales de vos documents PDF (page 2) et non sur la première page. Pour afficher un mode de paiement spécifique sur la première page, utilisez le champ "Mode de paiement" ci-dessous.
             </div>
+            <div class="text-xs text-gray-600">Valeur actuelle: {providerAcceptedPayments}</div>
           </div>
         </div>
         
