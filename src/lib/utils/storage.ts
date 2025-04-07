@@ -14,6 +14,7 @@ import {
   calculateAdvancePayment
 } from "$lib/types/invoice";
 import { jsPDF } from "jspdf";
+import { generateDocumentNumber } from "./documentNumbering";
 
 // Clé de stockage dans le localStorage
 const STORAGE_KEY = "invoices_data";
@@ -90,11 +91,9 @@ export const convertQuotationToInvoice = (
     ...quotation,
     id: crypto.randomUUID(), // Nouvel ID
     documentType: "facture",
-    documentNumber: `FAC-${new Date().getFullYear()}-${Math.floor(
-      Math.random() * 10000
-    )}`,
+    documentNumber: generateDocumentNumber("facture"), // Utiliser la fonction de génération de numéro
     issueDate: new Date().toISOString().split("T")[0],
-    quotationId: quotationId // Référence au devis d'origine
+    quotationId: quotation.documentNumber // Utiliser le numéro de devis comme référence, pas l'ID
   };
 
   // Sauvegarder les modifications
@@ -136,7 +135,7 @@ export const exportInvoiceToPdf = (invoiceId: string): void => {
   const invoice = getInvoiceById(invoiceId);
   if (!invoice) return;
 
-  import("$lib/utils/logoStorage").then(({ logoStore, getLogoSize }) => {
+  import("$lib/utils/logoStorage").then(({ logoStore }) => {
     let logoUrl = "";
 
     // S'abonner une seule fois au store pour récupérer le logo
@@ -159,8 +158,9 @@ export const exportInvoiceToPdf = (invoiceId: string): void => {
     // Ajouter le logo s'il existe
     if (logoUrl) {
       try {
-        // Obtenir les dimensions du logo depuis les paramètres
-        const logoSize = getLogoSize();
+        // Dimensions par défaut pour le logo
+        const logoSize = { width: 60, height: 40 };
+
         // Ratio d'aspect du logo (largeur/hauteur)
         const ratio = logoSize.width / logoSize.height;
         // Dimensions maximales dans le PDF

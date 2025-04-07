@@ -44,14 +44,26 @@
     let providerAcceptedPayments = '';
     
     // Moyens de paiement acceptés (nouvelle façon avec cases à cocher)
-    let acceptedPaymentMethods = {
-      "Virement bancaire": false,
-      "Carte bancaire": false,
-      "Chèque": false,
-      "Espèces": false,
-      "PayPal": false,
-      "Prélèvement automatique": false
+    type PaymentMethodsState = Record<string, boolean>;
+    
+    const PAYMENT_METHODS = [
+      "Virement bancaire",
+      "Carte bancaire",
+      "Chèque",
+      "Espèces",
+      "PayPal",
+      "Prélèvement automatique"
+    ];
+    
+    const createEmptyPaymentMethodsState = (): PaymentMethodsState => {
+      const state: PaymentMethodsState = {};
+      for (const method of PAYMENT_METHODS) {
+        state[method] = false;
+      }
+      return state;
     };
+    
+    let acceptedPaymentMethods: PaymentMethodsState = createEmptyPaymentMethodsState();
     
     // Prestations
     let items: Item[] = [
@@ -211,44 +223,36 @@
     );
   
     // Charger les moyens de paiement depuis la chaîne enregistrée
-    function parseAcceptedPayments(paymentsString: string) {
+    function parseAcceptedPayments(paymentsString: string): void {
       // Réinitialiser toutes les valeurs
-      for (const key of Object.keys(acceptedPaymentMethods)) {
-        acceptedPaymentMethods[key] = false;
-      }
+      acceptedPaymentMethods = createEmptyPaymentMethodsState();
       
-      if (paymentsString) {
-        const methods = paymentsString.split(',').map(m => m.trim());
-        for (const method of methods) {
-          if (method in acceptedPaymentMethods) {
-            acceptedPaymentMethods[method] = true;
-          }
+      if (!paymentsString) return;
+      
+      const methods = paymentsString.split(',').map(m => m.trim());
+      for (const method of methods) {
+        if (method in acceptedPaymentMethods) {
+          acceptedPaymentMethods[method] = true;
         }
       }
     }
     
     // Générer la chaîne de moyens de paiement à partir des cases cochées
     function generateAcceptedPaymentsString(): string {
-      const selectedMethods = [];
-      for (const [method, checked] of Object.entries(acceptedPaymentMethods)) {
-        if (checked) {
-          selectedMethods.push(method);
-        }
-      }
-      return selectedMethods.join(', ');
+      return Object.entries(acceptedPaymentMethods)
+        .filter(([_, checked]) => checked)
+        .map(([method]) => method)
+        .join(', ');
     }
     
     // Mettre à jour la variable quand les cases changent
-    function updateAcceptedPayments() {
+    function updateAcceptedPayments(): void {
       providerAcceptedPayments = generateAcceptedPaymentsString();
-      console.log('Moyens de paiement mis à jour:', providerAcceptedPayments);
     }
     
     // Surveiller les changements dans les cases à cocher
-    $: {
-      if (typeof window !== 'undefined') {
-        updateAcceptedPayments();
-      }
+    $: if (typeof window !== 'undefined') {
+      updateAcceptedPayments();
     }
   
     // Sauvegarder la facture ou le devis
@@ -317,6 +321,7 @@
       }
       
       // Sauvegarder les infos du prestataire
+      const acceptedPayments = generateAcceptedPaymentsString();
       const providerInfo = {
         name: providerName,
         address: providerAddress,
@@ -325,7 +330,7 @@
         siret: ValidationUtils.formatSiret(providerSiret), // Format SIRET
         tvaNumber: providerTvaNumber ? ValidationUtils.formatVatNumber(providerTvaNumber) : '', // Format TVA
         memberAga: providerMemberAga,
-        acceptedPayments: generateAcceptedPaymentsString() // S'assurer d'utiliser la fonction ici
+        acceptedPayments
       };
       
       localStorage.setItem('provider_info', JSON.stringify(providerInfo));
@@ -351,7 +356,7 @@
           siret: ValidationUtils.formatSiret(providerSiret),
           tvaNumber: providerTvaNumber ? ValidationUtils.formatVatNumber(providerTvaNumber) : undefined,
           memberAga: providerMemberAga,
-          acceptedPayments: generateAcceptedPaymentsString() // S'assurer d'utiliser la fonction ici aussi
+          acceptedPayments
         },
         items,
         taxRate,
