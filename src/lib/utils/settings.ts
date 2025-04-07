@@ -8,6 +8,9 @@ interface AppSettings {
   taxDefaultRate: number;
   useAutoNumbering: boolean;
   defaultDueDays: number;
+  prefixFacture?: string; // Préfixe pour les numéros de facture
+  prefixDevis?: string; // Préfixe pour les numéros de devis
+  includeMonth?: boolean; // Inclure le mois dans les numéros de document
 }
 
 // Clé de stockage pour les paramètres
@@ -19,7 +22,10 @@ const DEFAULT_SETTINGS: AppSettings = {
   currency: "EUR",
   taxDefaultRate: 20,
   useAutoNumbering: true,
-  defaultDueDays: 30
+  defaultDueDays: 30,
+  prefixFacture: "FAC",
+  prefixDevis: "DEV",
+  includeMonth: true
 };
 
 // Store pour les paramètres

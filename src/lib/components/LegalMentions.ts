@@ -1,7 +1,6 @@
 /**
- * Mentions légales obligatoires pour les factures et devis
- * Basé sur les exigences légales françaises
- * https://entreprendre.service-public.fr/vosdroits/F31228
+ * Module de génération des mentions légales pour les factures et devis
+ * Basé sur les exigences légales françaises pour les documents commerciaux
  */
 
 import type { Provider } from "$lib/types/invoice";
@@ -18,10 +17,8 @@ export function generateLegalMentions(
 ): string[] {
   const mentions: string[] = [];
 
-  // Titre
   mentions.push("MENTIONS LÉGALES OBLIGATOIRES");
 
-  // Identification du professionnel
   mentions.push("Identification du professionnel");
   mentions.push(`${provider.name} - Entrepreneur individuel`);
   mentions.push(`SIRET : ${provider.siret}`);
@@ -36,11 +33,9 @@ export function generateLegalMentions(
     mentions.push(`Téléphone : ${provider.phone}`);
   }
 
-  // Conditions générales de vente et obligations légales
-  mentions.push(""); // Ligne vide pour séparer les sections
+  mentions.push("");
   mentions.push("Conditions générales");
 
-  // Différentes mentions selon le type de document
   if (documentType === "facture") {
     mentions.push(
       "• Sauf mention contraire, cette facture est payable à réception."
@@ -50,14 +45,12 @@ export function generateLegalMentions(
       "• Tout retard de paiement entraînera des pénalités de retard égales à 3 fois le taux d'intérêt légal ainsi qu'une indemnité forfaitaire pour frais de recouvrement de 40€."
     );
 
-    // Mentions relatives à la garantie
     mentions.push("");
     mentions.push("Garanties légales");
     mentions.push(
       "• Les prestations de services sont soumises à la garantie légale de conformité (articles L.217-4 et suivants du Code de la consommation) et à la garantie des vices cachés (articles 1641 et suivants du Code civil)."
     );
   } else {
-    // Mentions spécifiques aux devis
     mentions.push(
       "• Ce devis est valable 30 jours à compter de sa date d'émission."
     );
@@ -67,7 +60,6 @@ export function generateLegalMentions(
     mentions.push("• Acompte demandé : 30% du montant total.");
   }
 
-  // Mentions communes
   mentions.push("");
   mentions.push("Médiation et litiges");
   mentions.push(
@@ -77,7 +69,6 @@ export function generateLegalMentions(
     "• Conformément aux articles L.616-1 et R.616-1 du code de la consommation, un médiateur de la consommation peut être sollicité en cas de litige."
   );
 
-  // Mentions relatives aux données personnelles
   mentions.push("");
   mentions.push("Protection des données personnelles");
   mentions.push(
@@ -87,11 +78,9 @@ export function generateLegalMentions(
     "• Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et d'opposition aux données vous concernant, en écrivant à l'adresse email indiquée ci-dessus."
   );
 
-  // Générer les mentions légales
   mentions.push("Mentions légales");
   mentions.push("");
 
-  // Mentions pour les délais de paiement
   mentions.push("DÉLAIS DE PAIEMENT");
   mentions.push(
     "Conformément à l'article L441-10 du Code de commerce, les factures sont payables à 30 jours à compter de la date d'émission de la facture."
@@ -104,7 +93,6 @@ export function generateLegalMentions(
   );
   mentions.push("");
 
-  // Mentions pour les modalités de paiement
   mentions.push("MODALITÉS DE PAIEMENT");
   mentions.push(
     `Les règlements peuvent être effectués par ${
@@ -118,7 +106,6 @@ export function generateLegalMentions(
   }
   mentions.push("");
 
-  // Médiation
   mentions.push("MÉDIATION DE LA CONSOMMATION");
   mentions.push(
     "Conformément aux articles L.616-1 et R.616-1 du code de la consommation, nous proposons un dispositif de médiation de la consommation."
@@ -135,7 +122,6 @@ export function generateLegalMentions(
   mentions.push("");
 
   if (!provider.tvaNumber || provider.tvaNumber.trim() === "") {
-    // Mention pour franchise de TVA
     mentions.push("TVA");
     mentions.push(
       "TVA non applicable, article 293 B du Code Général des Impôts."

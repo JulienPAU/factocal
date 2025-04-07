@@ -1,38 +1,60 @@
-# sv
+# Factures App
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Application de gestion de factures et devis pour freelances et petites entreprises.
 
-## Creating a project
+## Fonctionnalités
 
-If you're seeing this, you've probably already done this step. Congrats!
+- Création et gestion de factures et devis
+- Conversion de devis en factures
+- Numérotation automatique des documents
+- Gestion des remises et taxes
+- Export PDF et JSON
+- Import JSON pour la sauvegarde/restauration
+- Personnalisation avec logo
+- Interface responsive
+- Stockage local (localStorage)
 
-```bash
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Installation
 
 ```bash
-npm run dev
+# Installation des dépendances
+pnpm install
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+# Démarrage du serveur de développement
+pnpm dev
+
+# Construction pour la production
+pnpm run build
+
+
+
+## Utilisation
+
+### Création de documents
+
+Utilisez le formulaire de création pour générer vos factures et devis. Remplissez les informations du client, du prestataire et ajoutez les articles avec leurs prix.
+
+### Conversion de devis en factures
+
+Depuis la vue détaillée d'un devis, cliquez sur le bouton "Convertir en facture". Le système générera automatiquement une facture avec un numéro séquentiel et conservera la référence au devis d'origine.
+
+### Export et Import
+
+- **Export PDF**: Générez un PDF professionnel de votre facture ou devis
+- **Export JSON**: Sauvegardez vos données pour les transférer ou les sauvegarder
+- **Import JSON**: Restaurez vos données depuis une sauvegarde
+
+## Personnalisation
+
+Ajoutez votre logo depuis la page des paramètres. Le logo sera automatiquement intégré à vos documents avec un format optimisé.
+
+## Architecture technique
+
+Cette application est basée sur SvelteKit et utilise le localStorage pour la persistance des données. Aucune donnée n'est envoyée à un serveur externe.
+
+## Notes importantes
+
+- Vos données sont stockées uniquement dans votre navigateur
+- Exportez régulièrement vos données pour éviter toute perte
+- Pour changer d'appareil, utilisez les fonctions d'export/import
 ```
-
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

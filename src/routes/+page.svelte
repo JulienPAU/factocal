@@ -574,36 +574,36 @@
         
         <div class="space-y-4 mb-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nom / Entreprise*</label>
-            <input type="text" bind:value={newUserInfo.name} class="w-full p-2 border rounded" placeholder="Votre nom ou raison sociale">
+            <label for="provider-name" class="block text-sm font-medium text-gray-700 mb-1">Nom / Entreprise*</label>
+            <input id="provider-name" type="text" bind:value={newUserInfo.name} class="w-full p-2 border rounded" placeholder="Votre nom ou raison sociale">
           </div>
           
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
-            <input type="text" bind:value={newUserInfo.address} class="w-full p-2 border rounded" placeholder="Votre adresse">
+            <label for="provider-address" class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+            <input id="provider-address" type="text" bind:value={newUserInfo.address} class="w-full p-2 border rounded" placeholder="Votre adresse">
           </div>
           
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" bind:value={newUserInfo.email} class="w-full p-2 border rounded" placeholder="Email">
+              <label for="provider-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input id="provider-email" type="email" bind:value={newUserInfo.email} class="w-full p-2 border rounded" placeholder="Email">
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-              <input type="text" bind:value={newUserInfo.phone} class="w-full p-2 border rounded" placeholder="Téléphone">
+              <label for="provider-phone" class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+              <input id="provider-phone" type="text" bind:value={newUserInfo.phone} class="w-full p-2 border rounded" placeholder="Téléphone">
             </div>
           </div>
           
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">SIRET*</label>
-              <input type="text" bind:value={newUserInfo.siret} class="w-full p-2 border rounded" placeholder="SIRET">
+              <label for="provider-siret" class="block text-sm font-medium text-gray-700 mb-1">SIRET*</label>
+              <input id="provider-siret" type="text" bind:value={newUserInfo.siret} class="w-full p-2 border rounded" placeholder="SIRET">
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">N° TVA</label>
-              <input type="text" bind:value={newUserInfo.tvaNumber} class="w-full p-2 border rounded" placeholder="Numéro TVA si applicable">
+              <label for="provider-tva" class="block text-sm font-medium text-gray-700 mb-1">N° TVA</label>
+              <input id="provider-tva" type="text" bind:value={newUserInfo.tvaNumber} class="w-full p-2 border rounded" placeholder="Numéro TVA si applicable">
             </div>
           </div>
         </div>

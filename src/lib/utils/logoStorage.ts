@@ -1,3 +1,8 @@
+/**
+ * Module de gestion du logo de l'entreprise
+ * Permet de stocker, récupérer et manipuler le logo en base64 dans le localStorage
+ */
+
 import { browser } from "$app/environment";
 import { writable } from "svelte/store";
 

@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
+  import { onMount } from 'svelte';
   import * as ValidationUtils from './ValidationUtils';
-  
-  const dispatch = createEventDispatcher();
   
   // Propriétés du composant
   export let type: 'text' | 'email' | 'tel' | 'number' | 'siret' | 'vat' = 'text';
@@ -18,12 +16,17 @@
   export let pattern: string | undefined = undefined;
   export let customClass = '';
   export let helpText = '';
+  export let id = '';
+  
+  // Props de callback pour remplacer les événements
+  export let onChange: ((data: { value: string | number; isValid: boolean }) => void) | undefined = undefined;
   
   // État interne
   let inputElement: HTMLInputElement;
   let isValid = true;
   let isTouched = false;
   let internalValue = String(value);
+  let inputId = id || `input-${Math.random().toString(36).substring(2, 11)}`;
   
   // Gérer les changements de valeur externes
   $: {
@@ -85,8 +88,10 @@
       }
     }
     
-    // Mettre à jour la valeur externe
-    dispatch('change', { value: newValue, isValid });
+    // Appeler le callback si défini
+    if (onChange) {
+      onChange({ value: newValue, isValid });
+    }
     
     // Mettre à jour la liaison bidirectionnelle
     if (typeof value === 'number' && type === 'number') {
@@ -186,7 +191,7 @@
 
 <div class="mb-4">
   {#if label}
-    <label class="block text-gray-700 mb-2">
+    <label for={inputId} class="block text-gray-700 mb-2">
       {label} {required ? '*' : ''}
     </label>
   {/if}
@@ -194,6 +199,7 @@
   <input
     bind:this={inputElement}
     bind:value={internalValue}
+    id={inputId}
     on:input={handleInput}
     on:blur={handleBlur}
     class="w-full p-2 border rounded-lg {customClass} {!isValid && isTouched ? 'border-red-500' : ''}"

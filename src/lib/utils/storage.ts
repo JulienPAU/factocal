@@ -1,3 +1,12 @@
+/**
+ * Module de gestion du stockage des factures et devis
+ *
+ * Ce fichier contient toutes les fonctions pour charger, sauvegarder, exporter et
+ * manipuler les factures et devis. Il gère également la conversion des devis en factures
+ * en utilisant le système de numérotation cohérent et en conservant la référence du
+ * numéro de devis d'origine. Le stockage est basé sur le localStorage.
+ */
+
 import { browser } from "$app/environment";
 import type {
   Invoice,

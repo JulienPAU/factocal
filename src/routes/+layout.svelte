@@ -5,7 +5,7 @@
   <div class="min-h-screen bg-gray-100">
     <header class="bg-blue-800 text-white p-4 shadow-md">
       <div class="container mx-auto flex justify-between items-center">
-        <div class="text-xl font-bold">FacturePro</div>
+        <a href="/" class="text-xl font-bold">Factoral, stockage local pour vos factures</a>
       </div>
     </header>
     

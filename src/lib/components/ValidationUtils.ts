@@ -1,5 +1,7 @@
 /**
- * Utilitaires de validation pour les formulaires
+ * Utilitaires de validation pour les formulaires de l'application
+ * Inclut des fonctions pour valider et formater les numéros spécifiques (SIRET, TVA, téléphone)
+ * ainsi que des masques d'entrée pour améliorer l'expérience utilisateur
  */
 
 /**
@@ -13,10 +15,7 @@ export const isNumeric = (value: string): boolean => {
  * Vérifie si un numéro de SIRET est valide (14 chiffres)
  */
 export const isValidSiret = (siret: string): boolean => {
-  // Suppression des espaces éventuels
   const cleanedSiret = siret.replace(/\s/g, "");
-
-  // Vérification que la chaîne contient exactement 14 chiffres
   return /^[0-9]{14}$/.test(cleanedSiret);
 };
 
@@ -24,56 +23,71 @@ export const isValidSiret = (siret: string): boolean => {
  * Formater un numéro SIRET pour l'affichage
  */
 export const formatSiret = (siret: string): string => {
-  // Suppression des espaces
   const cleanedSiret = siret.replace(/\s/g, "");
+  if (cleanedSiret.length > 14) return cleanedSiret.slice(0, 14);
 
-  // Si le SIRET n'est pas valide, retourner la valeur d'origine
-  if (!isValidSiret(cleanedSiret)) return siret;
+  let formattedSiret = cleanedSiret;
+  if (cleanedSiret.length >= 9) {
+    formattedSiret = `${cleanedSiret.slice(0, 3)} ${cleanedSiret.slice(
+      3,
+      6
+    )} ${cleanedSiret.slice(6, 9)} ${cleanedSiret.slice(9)}`;
+  } else if (cleanedSiret.length >= 6) {
+    formattedSiret = `${cleanedSiret.slice(0, 3)} ${cleanedSiret.slice(
+      3,
+      6
+    )} ${cleanedSiret.slice(6)}`;
+  } else if (cleanedSiret.length >= 3) {
+    formattedSiret = `${cleanedSiret.slice(0, 3)} ${cleanedSiret.slice(3)}`;
+  }
 
-  // Grouper par 3-3-3-5 pour une meilleure lisibilité
-  return cleanedSiret.replace(/(\d{3})(\d{3})(\d{3})(\d{5})/, "$1 $2 $3 $4");
+  return formattedSiret.trim();
 };
 
 /**
  * Vérifie si un numéro de téléphone français est valide
  */
 export const isValidPhone = (phone: string): boolean => {
-  // Suppression des espaces, tirets, points, etc.
-  const cleanedPhone = phone.replace(/[\s.-]/g, "");
-
-  // Vérification du format français: commençant par 0 suivi de 9 chiffres
-  return /^(0|\+33|0033)[1-9][0-9]{8}$/.test(cleanedPhone);
+  const cleanedPhone = phone.replace(/[\s\-+.]/g, "");
+  return /^[0-9]{10,15}$/.test(cleanedPhone);
 };
 
 /**
  * Formater un numéro de téléphone pour l'affichage
  */
 export const formatPhone = (phone: string): string => {
-  // Suppression des caractères non numériques
-  const cleanedPhone = phone.replace(/\D/g, "");
+  const cleanedPhone = phone.replace(/[\s\-+.]/g, "");
+  if (cleanedPhone.length > 15) return cleanedPhone.slice(0, 15);
 
-  // Format français standard XX XX XX XX XX
-  if (cleanedPhone.length === 10 && cleanedPhone.startsWith("0")) {
-    return cleanedPhone.replace(
-      /(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
-      "$1 $2 $3 $4 $5"
-    );
+  let formattedPhone = cleanedPhone;
+
+  if (cleanedPhone.startsWith("33") || cleanedPhone.startsWith("+33")) {
+    const withoutPrefix = cleanedPhone.startsWith("33")
+      ? cleanedPhone.slice(2)
+      : cleanedPhone.slice(3);
+
+    formattedPhone = "+33 ";
+    for (let i = 0; i < withoutPrefix.length; i += 2) {
+      formattedPhone += withoutPrefix.slice(
+        i,
+        Math.min(i + 2, withoutPrefix.length)
+      );
+      if (i + 2 < withoutPrefix.length) formattedPhone += " ";
+    }
+  } else if (cleanedPhone.startsWith("0") && cleanedPhone.length === 10) {
+    formattedPhone = cleanedPhone.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
   }
 
-  return phone;
+  return formattedPhone;
 };
 
 /**
  * Vérifie si un numéro de TVA intracommunautaire est valide
  */
 export const isValidVatNumber = (vatNumber: string): boolean => {
-  // Format européen: 2 lettres du pays suivies de 2 à 13 chiffres selon le pays
-  // Pour la France: FR + 2 chiffres + 9 chiffres (SIREN)
   if (vatNumber.startsWith("FR")) {
     return /^FR[0-9]{2}[0-9]{9}$/.test(vatNumber.replace(/\s/g, ""));
   }
-
-  // Format général européen simplifié
   return /^[A-Z]{2}[0-9A-Z]{2,12}$/.test(vatNumber.replace(/\s/g, ""));
 };
 
@@ -81,56 +95,60 @@ export const isValidVatNumber = (vatNumber: string): boolean => {
  * Formater un numéro de TVA pour l'affichage
  */
 export const formatVatNumber = (vatNumber: string): string => {
-  // Suppression des espaces
-  const cleanedVat = vatNumber.replace(/\s/g, "");
+  const cleanedVat = vatNumber.replace(/\s/g, "").toUpperCase();
 
-  if (cleanedVat.startsWith("FR")) {
-    // Format français: FR XX XXXXXXXXX
-    return cleanedVat.replace(/^(FR)(\d{2})(\d{9})$/, "$1 $2 $3");
+  if (cleanedVat.length >= 2) {
+    const countryCode = cleanedVat.slice(0, 2);
+    const rest = cleanedVat.slice(2);
+
+    if (countryCode === "FR" && rest.length > 0) {
+      if (rest.length <= 2) {
+        return `${countryCode} ${rest}`;
+      } else {
+        return `${countryCode} ${rest.slice(0, 2)} ${rest.slice(2)}`;
+      }
+    }
+
+    return `${countryCode} ${rest}`;
   }
 
-  return vatNumber;
+  return cleanedVat;
 };
 
 /**
  * Applique un masque de validation à un champ input en temps réel
  */
 export const applyInputMask = (
-  inputElement: HTMLInputElement,
-  validationFn: (value: string) => boolean,
-  formatFn?: (value: string) => string
+  input: HTMLInputElement,
+  validator: (value: string) => boolean,
+  formatter: (value: string) => string
 ): void => {
-  // État précédent valide
-  let previousValidValue = inputElement.value;
+  let lastValidValue = "";
 
-  // Handler pour l'événement input
   const handleInput = () => {
-    const currentValue = inputElement.value;
+    const currentValue = input.value;
+    const formattedValue = formatter(currentValue);
 
-    // Si la valeur actuelle passe la validation
-    if (validationFn(currentValue)) {
-      // Mettre à jour la valeur précédente valide
-      previousValidValue = currentValue;
+    if (validator(formattedValue) || formattedValue === "") {
+      lastValidValue = formattedValue;
+    }
 
-      // Appliquer le formatage si disponible
-      if (formatFn) {
-        inputElement.value = formatFn(currentValue);
-      }
-    } else {
-      // Revenir à la dernière valeur valide
-      inputElement.value = previousValidValue;
+    if (input.value !== formattedValue) {
+      input.value = formattedValue;
+      const event = new Event("input", { bubbles: true });
+      input.dispatchEvent(event);
     }
   };
 
-  // Attacher le handler à l'événement input
-  inputElement.addEventListener("input", handleInput);
+  input.addEventListener("input", handleInput);
+
+  return;
 };
 
 /**
  * Vérifie si une adresse email est valide
  */
 export const isValidEmail = (email: string): boolean => {
-  // Validation d'email basique
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
@@ -154,7 +172,6 @@ export const isValidPercentage = (value: string): boolean => {
  * Vérifie si un texte contient des caractères invalides pour un document
  */
 export const containsInvalidChars = (text: string): boolean => {
-  // Caractères qui pourraient causer des problèmes dans un document
   const invalidChars = /[<>"'&]/;
   return invalidChars.test(text);
 };

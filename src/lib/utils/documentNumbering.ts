@@ -1,55 +1,140 @@
-import { loadInvoices } from "./storage";
-
 /**
- * Générer un numéro de document au format TYPE-ANNÉE-MOIS-SÉQUENCE
- * @param type Type de document ('facture' ou 'devis')
- * @returns Numéro de document formaté (ex: FAC-2025-04-001)
+ * Module de gestion de la numérotation des documents (factures et devis)
+ * Génère des numéros séquentiels basés sur le type de document, l'année et le mois
+ * Format: [Type]-[Année]-[Mois]-[Séquence]
  */
-export const generateDocumentNumber = (type: "facture" | "devis"): string => {
-  // Obtenir la date courante
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1; // Les mois commencent à 0, donc +1
 
-  // Formater le mois avec un zéro devant si nécessaire (01, 02, etc.)
-  const monthStr = month.toString().padStart(2, "0");
+import { browser } from "$app/environment";
+import { get } from "svelte/store";
+import { settingsStore } from "./settings";
+import type { Invoice } from "$lib/types/invoice";
 
-  // Préfixe selon le type
-  const prefix = type === "facture" ? "FAC" : "DEV";
+type DocumentType = "facture" | "devis";
+type CounterMap = Record<string, number>;
 
-  // Charger toutes les factures pour trouver le dernier numéro
-  const invoices = loadInvoices();
+const STORAGE_KEY = "document_counters";
+const DEFAULT_PREFIX_FACTURE = "FAC";
+const DEFAULT_PREFIX_DEVIS = "DEV";
 
-  // Filtrer par type, année et mois
-  const relevantInvoices = invoices.filter(
-    (inv) =>
-      inv.documentType === type &&
-      inv.documentNumber.startsWith(`${prefix}-${year}-${monthStr}`)
-  );
+function getDocPrefix(type: DocumentType): string {
+  if (!browser)
+    return type === "facture" ? DEFAULT_PREFIX_FACTURE : DEFAULT_PREFIX_DEVIS;
 
-  // Trouver le dernier numéro séquentiel
-  let maxSequence = 0;
+  const settings = get(settingsStore);
 
-  for (const invoice of relevantInvoices) {
-    // Format attendu: PREFIX-YEAR-MONTH-SEQUENCE
-    const parts = invoice.documentNumber.split("-");
-    if (parts.length === 4) {
-      const sequence = Number.parseInt(parts[3], 10);
-      if (!Number.isNaN(sequence) && sequence > maxSequence) {
-        maxSequence = sequence;
-      }
-    }
+  if (type === "facture") {
+    return settings.prefixFacture || DEFAULT_PREFIX_FACTURE;
   }
 
-  // Incrémenter pour le prochain document
-  const nextSequence = maxSequence + 1;
+  return settings.prefixDevis || DEFAULT_PREFIX_DEVIS;
+}
 
-  // Formater avec des zéros (ex: 001, 012, 123)
-  const sequenceStr = nextSequence.toString().padStart(3, "0");
+function getCounters(): CounterMap {
+  if (!browser) return {};
 
-  // Créer le numéro final
-  return `${prefix}-${year}-${monthStr}-${sequenceStr}`;
-};
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch (error) {
+    console.error("Erreur lors du chargement des compteurs:", error);
+    return {};
+  }
+}
+
+function saveCounters(counters: CounterMap): void {
+  if (!browser) return;
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(counters));
+}
+
+function resetCounters(): void {
+  if (!browser) return;
+
+  saveCounters({});
+}
+
+function getCurrentCounter(
+  prefix: string,
+  year: number,
+  month: number
+): number {
+  const counters = getCounters();
+  const key = `${prefix}-${year}-${month}`;
+  return counters[key] || 0;
+}
+
+function incrementCounter(prefix: string, year: number, month: number): number {
+  const counters = getCounters();
+  const key = `${prefix}-${year}-${month}`;
+
+  const nextValue = (counters[key] || 0) + 1;
+  counters[key] = nextValue;
+
+  saveCounters(counters);
+  return nextValue;
+}
+
+export function generateDocumentNumber(type: DocumentType): string {
+  const prefix = getDocPrefix(type);
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  const settings = get(settingsStore);
+  const paddedMonth =
+    settings.includeMonth !== false ? String(month).padStart(2, "0") : "";
+
+  const sequence = incrementCounter(prefix, year, month);
+  const paddedSequence = String(sequence).padStart(3, "0");
+
+  if (settings.includeMonth !== false) {
+    return `${prefix}-${year}-${paddedMonth}-${paddedSequence}`;
+  }
+
+  return `${prefix}-${year}-${paddedSequence}`;
+}
+
+export function checkDocumentNumberExistence(documentNumber: string): boolean {
+  if (!browser) return false;
+
+  try {
+    const data = localStorage.getItem("invoices_data");
+    if (!data) return false;
+
+    const invoices = JSON.parse(data) as Invoice[];
+    return invoices.some(
+      (invoice) => invoice.documentNumber === documentNumber
+    );
+  } catch (error) {
+    console.error(
+      "Erreur lors de la vérification du numéro de document:",
+      error
+    );
+    return false;
+  }
+}
+
+export function getLastDocumentNumber(type: DocumentType): string {
+  const prefix = getDocPrefix(type);
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  const currentCounter = getCurrentCounter(prefix, year, month);
+  const paddedCounter = String(currentCounter).padStart(3, "0");
+
+  const settings = get(settingsStore);
+  const paddedMonth =
+    settings.includeMonth !== false ? String(month).padStart(2, "0") : "";
+
+  if (settings.includeMonth !== false) {
+    return `${prefix}-${year}-${paddedMonth}-${paddedCounter}`;
+  }
+
+  return `${prefix}-${year}-${paddedCounter}`;
+}
 
 /**
  * Extraire le numéro de séquence d'un numéro de document
