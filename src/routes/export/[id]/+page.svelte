@@ -32,10 +32,8 @@
       
       invoice = result;
       
-      // Générer le PDF automatiquement
       generateInvoicePDF(invoice);
       
-      // Rediriger vers la page d'accueil après un court délai
       setTimeout(() => {
         goto('/');
       }, 1000);

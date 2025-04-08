@@ -63,7 +63,6 @@
           invoice.advancePayment
         );
         
-        // Préremplir les champs email si un client est défini
         if (invoice?.client?.email) {
           emailTo = invoice.client.email;
           const documentType = invoice.documentType === 'facture' ? 'Facture' : 'Devis';
@@ -78,7 +77,6 @@
       }
     });
     
-    // Télécharger le PDF
     const downloadPDF = () => {
       if (!invoice) return;
       
@@ -167,12 +165,12 @@
           >
             PDF
           </button>
-          <button 
+          <!-- <button 
             class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base"
             on:click={openEmailModal}
           >
             Email
-          </button>
+          </button> -->
           <button 
             class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base"
             on:click={() => goto(`/create?edit=${invoice?.id}`)}
