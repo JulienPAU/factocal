@@ -2,7 +2,7 @@
     import '../app.postcss'; // Pour Tailwind CSS
   </script>
   
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-h-screen bg-gray-100 flex flex-col justify-between">
     <header class="bg-blue-800 text-white p-4 shadow-md">
       <div class="container mx-auto flex justify-between items-center">
         <a href="/" class="text-xl font-bold">Factocal, stockage local pour vos factures</a>
