@@ -13,6 +13,6 @@
     
     <footer class="bg-gray-200 p-4 text-center text-gray-600 mt-10 flex justify-center items-center">
       <p>© {new Date().getFullYear()} - Application de gestion de factures</p>
-      <a href="https://julienpaulus.vercel.app/" target="_blank"><img src="/logo_new.svg" alt="logo" class="w-[3.5rem]"></a>
+      <a href="https://www.julienpaulus.fr/" target="_blank"><img src="/logo_new.svg" alt="logo" class="w-[3.5rem]"></a>
     </footer>
   </div>
