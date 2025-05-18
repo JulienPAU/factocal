@@ -11,29 +11,24 @@
     import InputValidation from '$lib/components/InputValidation.svelte';
     import * as ValidationUtils from '$lib/components/ValidationUtils';
   
-    // Mode édition ou création
     let editMode = false;
     let originalInvoiceId = '';
     
-    // États du formulaire
     let documentType: DocumentType = 'facture';
     let documentNumber = '';
     let issueDate = new Date().toISOString().split('T')[0];
     
-    // Calculer la date d'échéance par défaut (actuelle + 30 jours)
     let dueDate = (() => {
       const date = new Date();
       date.setDate(date.getDate() + 30);
       return date.toISOString().split('T')[0];
     })();
     
-    // Informations client
     let clientName = '';
     let clientAddress = '';
     let clientEmail = '';
     let clientPhone = '';
     
-    // Informations prestataire (vos infos)
     let providerName = '';
     let providerAddress = '';
     let providerEmail = '';
@@ -43,7 +38,6 @@
     let providerMemberAga = false;
     let providerAcceptedPayments = '';
     
-    // Moyens de paiement acceptés (nouvelle façon avec cases à cocher)
     type PaymentMethodsState = Record<string, boolean>;
     
     const PAYMENT_METHODS = [
@@ -65,7 +59,6 @@
     
     let acceptedPaymentMethods: PaymentMethodsState = createEmptyPaymentMethodsState();
     
-    // Prestations
     let items: Item[] = [
       {
         id: crypto.randomUUID(),
@@ -75,25 +68,20 @@
       }
     ];
     
-    // Autres informations
-    let taxRate = 0; // Pas de TVA par défaut
-    let discount = 0; // Pas de remise par défaut
-    let enableDiscount = false; // Option pour activer/désactiver la remise
+    let taxRate = 0; 
+    let discount = 0; 
+    let enableDiscount = false; 
     let notes = '';
     let quotationId = '';
     let advancePayment = 0;
     let enableAdvancePayment = false;
     let paymentMethod = '';
     
-    // Message d'erreur
     let error = '';
     
-    // Charger les données du document à éditer
     onMount(() => {
-      // Récupérer l'ID du document à éditer depuis les paramètres d'URL
       const editId = $page.url.searchParams.get('edit');
       
-      // Charger les informations du prestataire depuis localStorage
       const providerInfo = localStorage.getItem('provider_info');
       let savedProviderInfo = null;
       
@@ -106,27 +94,22 @@
       }
       
       if (editId) {
-        // Mode édition
         editMode = true;
         originalInvoiceId = editId;
         
-        // Récupérer le document depuis le store
         const invoice = $invoices.find(inv => inv.id === editId);
         
         if (invoice) {
-          // Remplir le formulaire avec les données du document
           documentType = invoice.documentType;
           documentNumber = invoice.documentNumber;
           issueDate = invoice.issueDate;
           dueDate = invoice.dueDate;
           
-          // Client
           clientName = invoice.client.name;
           clientAddress = invoice.client.address;
           clientEmail = invoice.client.email;
           clientPhone = invoice.client.phone || '';
           
-          // Prestataire
           providerName = invoice.provider.name;
           providerAddress = invoice.provider.address;
           providerEmail = invoice.provider.email;
@@ -137,10 +120,8 @@
           providerAcceptedPayments = invoice.provider.acceptedPayments || '';
           parseAcceptedPayments(providerAcceptedPayments);
           
-          // Prestations
           items = [...invoice.items];
           
-          // Autres informations
           taxRate = invoice.taxRate;
           discount = invoice.discount || 0;
           enableDiscount = discount > 0;
@@ -150,16 +131,13 @@
           enableAdvancePayment = advancePayment > 0;
           paymentMethod = invoice.paymentMethod || '';
         } else {
-          // Le document n'a pas été trouvé
           error = 'Document non trouvé';
           goto('/');
         }
       } else {
-        // Mode création : générer un nouveau numéro de document
         documentNumber = generateDocumentNumber(documentType);
         
         if (savedProviderInfo) {
-          // Utiliser les informations prestataire sauvegardées
           providerName = savedProviderInfo.name || '';
           providerAddress = savedProviderInfo.address || '';
           providerEmail = savedProviderInfo.email || '';
@@ -170,7 +148,6 @@
           providerAcceptedPayments = savedProviderInfo.acceptedPayments || '';
           parseAcceptedPayments(providerAcceptedPayments);
         } else {
-          // Pré-remplir avec les informations du dernier document créé (pour le prestataire)
           const lastInvoice = [...$invoices].sort((a, b) => 
             new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime()
           )[0];
@@ -190,7 +167,6 @@
       }
     });
   
-    // Ajouter une nouvelle ligne de prestation
     const addItem = () => {
       items = [
         ...items,
@@ -203,14 +179,12 @@
       ];
     };
   
-    // Supprimer une ligne de prestation
     const removeItem = (index: number) => {
       if (items.length > 1) {
         items = items.filter((_, i) => i !== index);
       }
     };
   
-    // Calculer les totaux
     $: subtotal = calculateSubtotal(items);
     $: discountAmount = enableDiscount ? calculateDiscount(items, discount) : 0;
     $: tax = calculateTax(items, taxRate, enableDiscount ? discount : 0);
@@ -222,9 +196,7 @@
       enableAdvancePayment ? advancePayment : 0
     );
   
-    // Charger les moyens de paiement depuis la chaîne enregistrée
     function parseAcceptedPayments(paymentsString: string): void {
-      // Réinitialiser toutes les valeurs
       acceptedPaymentMethods = createEmptyPaymentMethodsState();
       
       if (!paymentsString) return;
@@ -237,7 +209,6 @@
       }
     }
     
-    // Générer la chaîne de moyens de paiement à partir des cases cochées
     function generateAcceptedPaymentsString(): string {
       return Object.entries(acceptedPaymentMethods)
         .filter(([_, checked]) => checked)
@@ -245,23 +216,18 @@
         .join(', ');
     }
     
-    // Mettre à jour la variable quand les cases changent
     function updateAcceptedPayments(): void {
       providerAcceptedPayments = generateAcceptedPaymentsString();
     }
     
-    // Surveiller les changements dans les cases à cocher
     $: if (typeof window !== 'undefined') {
       updateAcceptedPayments();
     }
   
-    // Sauvegarder la facture ou le devis
     const saveInvoice = () => {
-      // Validation avancée
       let isValid = true;
       const errorMessages = [];
       
-      // Valider les informations du prestataire
       if (!providerName) {
         isValid = false;
         errorMessages.push("Nom du prestataire requis");
@@ -287,7 +253,6 @@
         errorMessages.push("Numéro de TVA invalide");
       }
       
-      // Valider les informations client
       if (!clientName) {
         isValid = false;
         errorMessages.push("Nom du client requis");
@@ -308,34 +273,30 @@
         errorMessages.push("Numéro de téléphone du client invalide");
       }
       
-      // Valider les items
       if (items.some(item => !item.description || item.quantity <= 0)) {
         isValid = false;
         errorMessages.push("Toutes les prestations doivent avoir une description et une quantité > 0");
       }
       
-      // Si erreurs, afficher et arrêter
       if (!isValid) {
         alert(`Veuillez corriger les erreurs suivantes:\n\n${errorMessages.join("\n")}`);
         return;
       }
       
-      // Sauvegarder les infos du prestataire
       const acceptedPayments = generateAcceptedPaymentsString();
       const providerInfo = {
         name: providerName,
         address: providerAddress,
         email: providerEmail,
         phone: providerPhone,
-        siret: ValidationUtils.formatSiret(providerSiret), // Format SIRET
-        tvaNumber: providerTvaNumber ? ValidationUtils.formatVatNumber(providerTvaNumber) : '', // Format TVA
+        siret: ValidationUtils.formatSiret(providerSiret), 
+        tvaNumber: providerTvaNumber ? ValidationUtils.formatVatNumber(providerTvaNumber) : '', 
         memberAga: providerMemberAga,
         acceptedPayments
       };
       
       localStorage.setItem('provider_info', JSON.stringify(providerInfo));
       
-      // Créer l'objet facture/devis
       const invoice: Invoice = {
         id: editMode ? originalInvoiceId : crypto.randomUUID(),
         documentType,
@@ -367,18 +328,15 @@
         paymentMethod
       };
       
-      // Sauvegarder dans le store
       if (editMode) {
         invoices.update(invoice);
       } else {
         invoices.add(invoice);
       }
       
-      // Rediriger vers la page d'accueil
       goto('/');
     };
     
-    // Mettre à jour le numéro de document lorsque le type change
     $: if (!editMode && documentType) {
       documentNumber = generateDocumentNumber(documentType);
     }
@@ -403,11 +361,8 @@
 
   <div class="bg-white shadow-md rounded-lg p-6">
     <form on:submit|preventDefault={saveInvoice}>
-      <!-- Informations générales -->
       <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Infos document et prestataire -->
         <div>
-          <!-- Type de document -->
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Type de document</label>
             <div class="flex space-x-4">
@@ -434,7 +389,6 @@
             </div>
           </div>
           
-          <!-- Numéro de document -->
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Numéro de document</label>
             <input 
@@ -445,7 +399,6 @@
             >
           </div>
           
-          <!-- Numéro de devis (référence) si c'est une facture -->
           {#if documentType === 'facture'}
             <div class="mb-4">
               <label class="block text-gray-700 mb-2">Référence devis (optionnel)</label>
@@ -459,9 +412,7 @@
           {/if}
         </div>
         
-        <!-- Dates -->
         <div>
-          <!-- Date d'émission -->
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Date d'émission</label>
             <input 
@@ -472,7 +423,6 @@
             />
           </div>
           
-          <!-- Date d'échéance -->
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Date d'échéance</label>
             <input 
@@ -483,7 +433,6 @@
             />
           </div>
           
-          <!-- Logo -->
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Logo entreprise</label>
             <LogoUploader />
@@ -493,9 +442,7 @@
       
       <hr class="my-6">
       
-      <!-- Informations client et prestataire -->
       <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Informations prestataire -->
         <div>
           <h3 class="text-lg font-bold mb-3">Vos informations</h3>
           
@@ -591,7 +538,6 @@
           </div>
         </div>
         
-        <!-- Informations client -->
         <div>
           <h3 class="text-lg font-bold mb-3">Informations client</h3>
           
@@ -640,7 +586,6 @@
       
       <hr class="my-6">
       
-      <!-- Prestations -->
       <h2 class="text-xl font-bold mb-4 text-blue-800">Prestations</h2>
       <div class="mb-6">
         <div class="mb-4 overflow-x-auto">
@@ -715,7 +660,6 @@
         </button>
       </div>
       
-      <!-- TVA et remise -->
       <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <div class="mb-4">

@@ -12,22 +12,17 @@
   } from '$lib/utils/storage';
   import type { Invoice } from '$lib/types/invoice';
 
-  // Filtres
-  let filter = 'all'; // 'all', 'facture', 'devis'
+  let filter = 'all'; 
   let searchTerm = "";
   
-  // Référence à l'élément input file (caché)
   let fileInput: HTMLInputElement;
 
-  // État pour le modal de détection de doublons
   let showDuplicatesModal = false;
   let duplicates: Invoice[] = [];
   let currentInvoice: Invoice | null = null;
 
-  // État pour le menu d'options
   let showOptionsMenu = false;
 
-  // États pour le modal d'accueil
   let showWelcomeModal = false;
   let newUserInfo = {
     name: '',
@@ -38,22 +33,17 @@
     tvaNumber: ''
   };
 
-  // Fonction pour fermer le menu d'options quand on clique ailleurs
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
     
-    // Si on clique ailleurs que sur le menu ou le bouton, fermer le menu
     if (showOptionsMenu && !target.closest('.options-menu') && !target.closest('.options-button')) {
       showOptionsMenu = false;
     }
   }
 
-  // Initialiser le store au chargement de la page
   onMount(() => {
-    // Gestionnaire déjà présent
     invoices.init();
     
-    // Initialiser les éléments d'input
     if (!fileInput) {
       fileInput = document.createElement('input');
       fileInput.type = 'file';
@@ -63,29 +53,22 @@
       document.body.appendChild(fileInput);
     }
     
-    // Ajouter l'écouteur pour fermer le menu quand on clique ailleurs
     document.addEventListener('click', handleClickOutside);
     
-    // Vérifier s'il existe déjà des informations de prestataire
     const providerInfo = localStorage.getItem('provider_info');
     
-    // Si c'est la première visite ou pas d'infos prestataire, montrer le message d'accueil
     if (!providerInfo) {
       showWelcomeModal = true;
     }
     
-    // Nettoyer à la destruction du composant
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
   });
 
-  // Liste filtrée avec recherche
   $: filteredInvoices = $invoices.filter((invoice) => {
-    // Filtre par type de document
     const matchesType = filter === 'all' || invoice.documentType === filter;
     
-    // Filtre par terme de recherche
     const matchesSearch = searchTerm === "" || 
       invoice.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
       invoice.client.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -93,17 +76,14 @@
     
     return matchesType && matchesSearch;
   }).sort((a, b) => {
-    // Tri par date (plus récent en premier)
     return new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime();
   });
   
-  // Conversion d'un devis en facture
   const handleConvertToInvoice = (id: string) => {
     invoices.convertToInvoice(id);
     showSuccessToast('Devis converti en facture avec succès!');
   };
   
-  // Supprimer un document
   const handleDelete = (id: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce document?')) {
       invoices.remove(id);
@@ -111,19 +91,16 @@
     }
   };
 
-  // Exporter un document en JSON
   const handleExportJson = (id: string) => {
     exportInvoiceToJson(id);
     showSuccessToast('Document exporté en JSON avec succès');
   };
 
-  // Exporter un document en PDF
   const handleExportPdf = (id: string) => {
     exportInvoiceToPdf(id);
     showSuccessToast('Document exporté en PDF avec succès');
   };
 
-  // Exporter tous les documents (ou filtrés par type)
   const handleExportAllJson = (type: 'all' | 'facture' | 'devis' = 'all') => {
     exportAllInvoicesToJson(type);
     if (type === 'all') {
@@ -133,12 +110,10 @@
     }
   };
 
-  // Déclencher le clic sur l'input file JSON
   const triggerJsonFileInput = () => {
     fileInput.click();
   };
 
-  // Gérer l'import de fichier JSON
   const handleJsonImport = async (event: Event) => {
     const target = event.target as HTMLInputElement;
     if (!target.files || target.files.length === 0) return;
@@ -149,7 +124,6 @@
       return;
     }
 
-    // Afficher un message de chargement
     showLoadingToast("Importation du fichier JSON en cours...");
 
     const result = await importInvoiceFromJson(file);
@@ -161,31 +135,24 @@
       return;
     }
     
-    // Vérifier s'il y a des doublons
     if (result.duplicates.length > 0) {
-      // Afficher le modal de confirmation
       currentInvoice = $invoices.find(inv => inv.id === result.id) || null;
       duplicates = result.duplicates;
       showDuplicatesModal = true;
       hideToast();
     } else {
-      // Recharger les factures et afficher un message de succès
       invoices.init();
       hideToast();
       showSuccessToast('Documents importés avec succès!');
     }
 
-    // Réinitialiser l'input pour permettre de sélectionner à nouveau le même fichier
     target.value = '';
   };
 
-  // Fermer le modal de détection de doublons
   const closeDuplicatesModal = () => {
     showDuplicatesModal = false;
-    // On ne supprime pas la facture ici car ça empêche de l'importer plus tard
   };
 
-  // Confirmer l'importation malgré les doublons
   const confirmImport = () => {
     if (currentInvoice) {
       confirmInvoiceImport(currentInvoice.id);
@@ -195,7 +162,6 @@
     }
   };
 
-  // Toast notifications
   let showToast = false;
   let toastMessage = '';
   let toastType: 'success' | 'error' | 'loading' = 'success';
@@ -233,7 +199,6 @@
     showToast = false;
   };
 
-  // Sauvegarder les informations du prestataire
   const saveProviderInfo = () => {
     if (!newUserInfo.name || !newUserInfo.siret) {
       showErrorToast('Veuillez au moins renseigner le nom et le SIRET');
@@ -253,12 +218,10 @@
     showSuccessToast('Vos informations ont été enregistrées avec succès');
   };
 
-  // Ignorer le message d'accueil
   const skipWelcomeModal = () => {
     showWelcomeModal = false;
   };
 
-  // Exporter les infos prestataire
   const exportProviderInfo = () => {
     const providerInfo = localStorage.getItem('provider_info');
     if (!providerInfo) {
@@ -279,7 +242,6 @@
     showSuccessToast('Informations exportées avec succès');
   };
 
-  // Importer les infos prestataire
   const importProviderInfo = (event: Event) => {
     const target = event.target as HTMLInputElement;
     if (!target.files || target.files.length === 0) return;
@@ -309,10 +271,8 @@
     reader.readAsText(file);
   };
   
-  // Référence à l'input file pour importer les infos prestataire
   let providerInfoInput: HTMLInputElement;
   
-  // Déclencher l'input file pour importer des infos prestataire
   const triggerProviderInfoInput = () => {
     providerInfoInput?.click();
   };
@@ -324,7 +284,6 @@
 </svelte:head>
 
 <main class="container mx-auto p-4 max-w-4xl">
-  <!-- En-tête responsive -->
   <header class="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <h1 class="text-2xl sm:text-3xl font-bold text-blue-800">Gestionnaire de Factures</h1>
     <div class="flex flex-wrap gap-2">
@@ -416,7 +375,6 @@
   </header>
   
   <div class="bg-white shadow-md rounded-lg p-4 md:p-6">
-    <!-- Barre de recherche et filtres -->
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div class="w-full sm:w-auto flex-grow">
         <input
@@ -448,7 +406,6 @@
       </div>
     </div>
 
-    <!-- Tableau des documents -->
     {#if filteredInvoices.length > 0}
       <div class="overflow-x-auto">
         <table class="min-w-full border-collapse">

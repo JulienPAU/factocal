@@ -1,22 +1,19 @@
 import { browser } from "$app/environment";
 import { writable } from "svelte/store";
 
-// Type pour les paramètres de l'application
 interface AppSettings {
   language: string;
   currency: string;
   taxDefaultRate: number;
   useAutoNumbering: boolean;
   defaultDueDays: number;
-  prefixFacture?: string; // Préfixe pour les numéros de facture
-  prefixDevis?: string; // Préfixe pour les numéros de devis
-  includeMonth?: boolean; // Inclure le mois dans les numéros de document
+  prefixFacture?: string;
+  prefixDevis?: string;
+  includeMonth?: boolean;
 }
 
-// Clé de stockage pour les paramètres
 const SETTINGS_STORAGE_KEY = "app_settings";
 
-// Paramètres par défaut
 const DEFAULT_SETTINGS: AppSettings = {
   language: "fr",
   currency: "EUR",
@@ -28,10 +25,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   includeMonth: true
 };
 
-// Store pour les paramètres
 export const settingsStore = writable<AppSettings>(DEFAULT_SETTINGS);
 
-// Initialiser les paramètres
 export const initSettings = (): void => {
   if (!browser) return;
 
@@ -41,7 +36,6 @@ export const initSettings = (): void => {
       const settings = JSON.parse(storedSettings);
       settingsStore.set(settings);
     } else {
-      // Si pas de paramètres stockés, initialiser avec les valeurs par défaut
       saveSettings(DEFAULT_SETTINGS);
     }
   } catch (error) {
@@ -49,7 +43,6 @@ export const initSettings = (): void => {
   }
 };
 
-// Sauvegarder les paramètres
 export const saveSettings = (settings: AppSettings): void => {
   if (!browser) return;
 
@@ -61,7 +54,6 @@ export const saveSettings = (settings: AppSettings): void => {
   }
 };
 
-// Récupérer les paramètres
 export const getAppSettings = (): AppSettings => {
   if (!browser) return DEFAULT_SETTINGS;
 

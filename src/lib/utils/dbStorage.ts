@@ -1,12 +1,10 @@
 import { browser } from "$app/environment";
 import type { Invoice } from "$lib/types/invoice";
 
-// Nom de la base de données et version
 const DB_NAME = "factures_db";
 const DB_VERSION = 1;
 const STORE_NAME = "invoices";
 
-// Ouvrir la connexion à la base de données
 const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
     if (!browser) reject(new Error("IndexedDB non disponible côté serveur"));
@@ -30,7 +28,6 @@ const openDB = (): Promise<IDBDatabase> => {
   });
 };
 
-// Charger toutes les factures
 export const loadInvoicesFromDB = async (): Promise<Invoice[]> => {
   try {
     const db = await openDB();
@@ -55,7 +52,6 @@ export const loadInvoicesFromDB = async (): Promise<Invoice[]> => {
   }
 };
 
-// Sauvegarder une facture
 export const saveInvoiceToDB = async (invoice: Invoice): Promise<void> => {
   try {
     const db = await openDB();
@@ -79,7 +75,6 @@ export const saveInvoiceToDB = async (invoice: Invoice): Promise<void> => {
   }
 };
 
-// Obtenir une facture par son ID
 export const getInvoiceByIdFromDB = async (
   id: string
 ): Promise<Invoice | undefined> => {
@@ -108,7 +103,6 @@ export const getInvoiceByIdFromDB = async (
   }
 };
 
-// Supprimer une facture
 export const deleteInvoiceFromDB = async (id: string): Promise<void> => {
   try {
     const db = await openDB();
@@ -134,19 +128,16 @@ export const deleteInvoiceFromDB = async (id: string): Promise<void> => {
   }
 };
 
-// Migrer les données du localStorage vers IndexedDB
 export const migrateLocalStorageToIndexedDB = async (): Promise<void> => {
   if (!browser) return;
 
   try {
-    // Obtenir les données du localStorage
     const data = localStorage.getItem("invoices_data");
     if (!data) return;
 
     const invoices: Invoice[] = JSON.parse(data);
     if (!invoices.length) return;
 
-    // Sauvegarder chaque facture dans IndexedDB
     for (const invoice of invoices) {
       await saveInvoiceToDB(invoice);
     }

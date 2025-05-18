@@ -1,18 +1,10 @@
-/**
- * Module de gestion du logo de l'entreprise
- * Permet de stocker, récupérer et manipuler le logo en base64 dans le localStorage
- */
-
 import { browser } from "$app/environment";
 import { writable } from "svelte/store";
 
-// Clé de stockage pour le logo dans localStorage
 const LOGO_STORAGE_KEY = "company_logo";
 
-// Store Svelte pour le logo
 export const logoStore = writable<string | null>(null);
 
-// Initialiser le store avec le logo stocké
 export const initLogoStore = (): void => {
   if (!browser) return;
 
@@ -26,7 +18,6 @@ export const initLogoStore = (): void => {
   }
 };
 
-// Sauvegarder le logo dans localStorage
 export const saveLogo = (logoBase64: string): void => {
   if (!browser) return;
 
@@ -41,7 +32,6 @@ export const saveLogo = (logoBase64: string): void => {
   }
 };
 
-// Supprimer le logo
 export const removeLogo = (): void => {
   if (!browser) return;
 
@@ -53,7 +43,6 @@ export const removeLogo = (): void => {
   }
 };
 
-// Convertir une image en base64
 export const imageToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -74,9 +63,7 @@ export const imageToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// Valider l'image (taille max, format)
 export const validateImage = (file: File): boolean => {
-  // Vérifier le type de fichier
   const validTypes = [
     "image/jpeg",
     "image/png",
@@ -90,8 +77,7 @@ export const validateImage = (file: File): boolean => {
     );
   }
 
-  // Vérifier la taille (max 500KB)
-  const maxSizeInBytes = 500 * 1024; // 500KB
+  const maxSizeInBytes = 500 * 1024;
   if (file.size > maxSizeInBytes) {
     throw new Error(
       "L'image est trop volumineuse. La taille maximale est de 500KB."

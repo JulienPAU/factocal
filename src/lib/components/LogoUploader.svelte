@@ -2,17 +2,14 @@
   import { onMount } from 'svelte';
   import { logoStore, saveLogo, removeLogo, initLogoStore, imageToBase64, validateImage } from '$lib/utils/logoStorage';
   
-  // État local
   let logoInput: HTMLInputElement;
   let dragActive = false;
   let errorMessage = '';
   
-  // Initialiser le store du logo
   onMount(() => {
     initLogoStore();
   });
   
-  // Gérer l'import du logo
   const handleLogoUpload = async (event: Event) => {
     const target = event.target as HTMLInputElement;
     if (!target.files || target.files.length === 0) return;
@@ -21,30 +18,24 @@
     errorMessage = '';
     
     try {
-      // Valider l'image
       validateImage(file);
       
-      // Convertir l'image en base64
       const base64Logo = await imageToBase64(file);
       
-      // Sauvegarder l'image
       saveLogo(base64Logo);
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : "Erreur lors du téléchargement";
     }
     
-    // Réinitialiser l'input
     target.value = '';
   };
   
-  // Supprimer le logo actuel
   const handleRemoveLogo = () => {
     if (confirm('Êtes-vous sûr de vouloir supprimer le logo ?')) {
       removeLogo();
     }
   };
   
-  // Fonctions pour le drag and drop
   const handleDragEnter = (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -74,27 +65,22 @@
     errorMessage = '';
     
     try {
-      // Valider l'image
       validateImage(file);
       
-      // Convertir l'image en base64
       const base64Logo = await imageToBase64(file);
       
-      // Sauvegarder l'image
       saveLogo(base64Logo);
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : "Erreur lors du téléchargement";
     }
   };
   
-  // Déclencher le clic sur l'input file
   const triggerLogoInput = () => {
     logoInput.click();
   };
 </script>
 
 <div class="space-y-4">
-  <!-- Logo actuel ou zone de drop -->
   {#if $logoStore}
     <div class="relative flex flex-col items-center">
       <div class="mb-2 relative">
@@ -146,7 +132,6 @@
     </div>
   {/if}
   
-  <!-- Message d'erreur -->
   {#if errorMessage}
     <div class="text-red-500 text-sm mt-2">{errorMessage}</div>
   {/if}

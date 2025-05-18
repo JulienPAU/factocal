@@ -17,20 +17,18 @@
     let loading = true;
     let error: string | null = null;
     
-    // Variables pour le modal d'envoi d'email
     let showEmailModal = false;
     let emailTo = '';
     let emailSubject = '';
     let emailMessage = '';
 
-    // Variables pour les notifications toast
     let showToast = false;
     let toastMessage = '';
     let toastType: 'success' | 'error' = 'success';
     let toastTimer: ReturnType<typeof setTimeout> | null = null;
     
     onMount(() => {
-      initLogoStore(); // Initialiser le store du logo
+      initLogoStore(); 
       
       const id = $page.params.id;
       
@@ -51,7 +49,6 @@
           return;
         }
         
-        // Calculer les totaux
         subtotal = calculateSubtotal(invoice.items);
         discountAmount = invoice.discount ? calculateDiscount(invoice.items, invoice.discount) : 0;
         tax = calculateTax(invoice.items, invoice.taxRate, invoice.discount);
@@ -89,17 +86,14 @@
       }
     };
     
-    // Ouvrir le modal d'envoi d'email
     const openEmailModal = () => {
       showEmailModal = true;
     };
     
-    // Fermer le modal d'envoi d'email
     const closeEmailModal = () => {
       showEmailModal = false;
     };
     
-    // Envoyer l'email
     const handleSendEmail = () => {
       if (!invoice || !emailTo) return;
       
@@ -113,7 +107,6 @@
       }
     };
 
-    // Fonctions pour afficher les notifications
     const showSuccessToast = (message: string) => {
       if (toastTimer) clearTimeout(toastTimer);
       toastMessage = message;

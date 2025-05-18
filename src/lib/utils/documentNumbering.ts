@@ -157,6 +157,5 @@ export const formatDocumentNumber = (documentNumber: string): string => {
     return documentNumber;
   }
 
-  // Sinon, c'est un ancien format ou un format inconnu, le retourner tel quel
   return documentNumber;
 };

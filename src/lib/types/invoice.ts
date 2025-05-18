@@ -21,8 +21,8 @@ export interface Provider {
   phone?: string;
   siret: string;
   tvaNumber?: string;
-  acceptedPayments?: string; // Modes de paiement acceptés
-  memberAga?: boolean; // Membre d'une association de gestion agréée
+  acceptedPayments?: string;
+  memberAga?: boolean;
 }
 
 export interface Invoice {
@@ -40,13 +40,11 @@ export interface Invoice {
   notes?: string;
   totalAmount?: number;
 
-  // Pour la conversion devis -> facture
   quotationId?: string;
   convertedToInvoice?: boolean;
-  paymentMethod?: string; // Mode de paiement
+  paymentMethod?: string;
 }
 
-// Utilitaires pour calculer les totaux
 export const calculateSubtotal = (items: Item[]): number => {
   return items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 };
@@ -73,7 +71,6 @@ export const calculateAdvancePayment = (
   advancePaymentAmount = 0
 ) => {
   if (!advancePaymentAmount || advancePaymentAmount <= 0) return 0;
-  // L'accompte est un montant fixe, non un pourcentage
   return advancePaymentAmount;
 };
 

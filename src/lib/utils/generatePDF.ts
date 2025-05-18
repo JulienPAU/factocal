@@ -16,7 +16,6 @@ import { calculateTotalWithoutTax } from "./calculations";
 import { getAppSettings } from "./settings";
 import { addLegalMentionsPage } from "$lib/components/LegalMentions";
 
-// Définir le type pour jsPDF avec autoTable
 interface JsPDFWithAutoTable extends jsPDF {
   autoTable: (options: AutoTableOptions) => void;
   lastAutoTable: {
@@ -24,7 +23,6 @@ interface JsPDFWithAutoTable extends jsPDF {
   };
 }
 
-// Interface pour les options de autoTable
 interface AutoTableOptions {
   startY: number;
   head: string[][];
@@ -36,13 +34,9 @@ interface AutoTableOptions {
   margin: Record<string, number>;
 }
 
-/**
- * Génère un PDF pour une facture ou un devis
- */
 export const generateInvoicePDF = (invoice: Invoice): void => {
   if (!browser) return;
 
-  // Fonction pour formater les dates
   const formatDate = (dateString: string): string => {
     if (!dateString) return "";
     try {
@@ -53,12 +47,10 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     }
   };
 
-  // Fonction pour formater les montants
   const formatMoney = (amount: number): string => {
     return `${amount.toFixed(2)} €`;
   };
 
-  // Fonction pour calculer le total sans TVA
   const calculateTotalWithoutTax = (invoice: Invoice): number => {
     const subtotal = calculateSubtotal(invoice.items);
     const discount = invoice.discount
@@ -69,41 +61,34 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
 
   const doc = new jsPDF();
 
-  // Variables de mise en page
   const margin = 20;
   const pageWidth = doc.internal.pageSize.getWidth();
   const lineHeight = 10;
 
-  // Utilitaires pour le positionnement
   let y = margin;
   const addSpace = (space: number) => {
     y += space;
   };
 
-  // Convertir les mesures de mm en points
   const mmToPt = (mm: number) => mm * 2.83465;
 
-  // Ajouter une ligne de texte et retourner la hauteur de la ligne ajoutée
   const addText = (
     text: string,
     x: number,
     y: number,
     options?: TextOptionsLight
   ): number => {
-    if (!text) return 0; // Si texte vide ou undefined, ne pas ajouter d'espace
+    if (!text) return 0;
     doc.text(text, x, y, options);
-    return mmToPt(2.5); // Réduire davantage l'espacement (3.5mm → 2.5mm)
+    return mmToPt(2.5);
   };
 
-  // Définir la police par défaut
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
 
-  // Logo à droite
   const logo = get(logoStore);
   const initialY = y;
 
-  // Création d'une chaîne unique pour le prestataire avec séparateurs spécifiques
   let providerText = `${invoice.provider.name}\n`;
   providerText += `${invoice.provider.address}\n`;
   providerText += `SIRET: ${invoice.provider.siret}\n`;
@@ -115,18 +100,14 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     providerText += `\nTél: ${invoice.provider.phone}`;
   }
 
-  // Utilisation de splitTextToSize pour gérer les retours à la ligne uniformément
   const splitProviderText = doc.splitTextToSize(providerText, 80);
   doc.text(splitProviderText, margin, y);
 
-  // Calculer la hauteur du bloc prestataire
   const providerHeight = splitProviderText.length * mmToPt(3);
   const providerEndY = y + providerHeight;
 
-  // Si on a un logo, l'ajouter à droite
   if (logo) {
     try {
-      // Déterminer le format de l'image depuis le type MIME dans le base64
       let format = "JPEG";
       if (logo.indexOf("data:image/png") !== -1) {
         format = "PNG";
@@ -136,48 +117,37 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
         format = "GIF";
       }
 
-      // Dimensions fixes pour le logo dans le PDF
-      const maxLogoHeight = 20; // Hauteur maximale de 20mm
+      const maxLogoHeight = 20;
 
-      // Hauteur fixe
       const logoHeight = Math.min(maxLogoHeight, providerHeight / 2);
 
-      // Estimer le ratio en analysant l'image base64
-      let ratio = 1; // Ratio par défaut
+      let ratio = 1;
       const imgData = logo.split(",")[1];
       const imgType = logo.split(";")[0].split("/")[1];
 
-      // Pour une estimation approximative du ratio à partir des premiers octets
-      // Cette méthode est simplifiée et n'est pas aussi précise qu'une analyse complète
       try {
-        // On va utiliser un ratio auto-adaptatif basé sur le format de l'image
         if (format === "PNG" || format === "GIF") {
-          ratio = 1; // Images avec transparence, souvent logos
+          ratio = 1;
         } else {
-          ratio = 1.2; // Photos ou images sans transparence
+          ratio = 1.2;
         }
       } catch (e) {
-        ratio = 1; // En cas d'erreur, utiliser le ratio par défaut
+        ratio = 1;
       }
 
-      // Calculer la largeur en fonction du ratio et de la hauteur
       const logoWidth = logoHeight * ratio;
 
-      // Position du logo en haut à droite
       const logoX = pageWidth - margin - logoWidth;
-      const logoY = y; // Aligner avec le haut du bloc prestataire (au lieu de margin)
+      const logoY = y;
 
-      // Ajouter l'image
       doc.addImage(logo, format, logoX, logoY, logoWidth, logoHeight);
     } catch (e) {
       console.error("Erreur lors de l'ajout du logo au PDF:", e);
     }
   }
 
-  // Mettre à jour y avec la position après le bloc prestataire
-  y = providerEndY + 5; // Réduire l'espace à 5mm
+  y = providerEndY + 5;
 
-  // Titre du document centré (facture ou devis)
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
   doc.text(
@@ -189,17 +159,14 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     { align: "center" }
   );
 
-  // Ajouter un espace après le titre, puis la ligne de séparation
   addSpace(5);
 
-  // Ajouter une ligne de séparation après le titre
-  doc.setDrawColor(200, 200, 200); // Gris clair
+  doc.setDrawColor(200, 200, 200);
   doc.line(margin, y, pageWidth - margin, y);
-  doc.setDrawColor(0); // Réinitialiser la couleur à noir
+  doc.setDrawColor(0);
 
-  addSpace(5); // Espace réduit après la ligne
+  addSpace(5);
 
-  // Dates d'émission et d'échéance (alignées à droite)
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.text(
@@ -216,18 +183,15 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     { align: "right" }
   );
 
-  // Si c'est une facture convertie depuis un devis, afficher la référence
   if (invoice.documentType === "facture" && invoice.quotationId) {
-    addSpace(5); // Réduire l'espace de 5mm à 3mm
+    addSpace(5);
     doc.text(`Référence devis: ${invoice.quotationId}`, pageWidth - margin, y, {
       align: "right"
     });
   }
 
-  addSpace(5); // Réduire l'espace de 10mm à 5mm
+  addSpace(5);
 
-  // Informations du client
-  // Même approche pour le client
   let clientText = `${invoice.client.name}\n`;
   clientText += `${invoice.client.address}`;
   if (invoice.client.email) {
@@ -237,21 +201,17 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     clientText += `\nTél: ${invoice.client.phone}`;
   }
 
-  // Utilisation de splitTextToSize pour gérer les retours à la ligne uniformément
   const splitClientText = doc.splitTextToSize(clientText, 80);
   doc.text(splitClientText, margin, y);
 
-  // Mise à jour de y après le bloc client
-  y += splitClientText.length * mmToPt(3) + mmToPt(4); // Réduire l'espace de 6mm à 4mm
+  y += splitClientText.length * mmToPt(3) + mmToPt(4);
 
-  // Titre pour la section des prestations
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("PRESTATIONS", margin, y);
-  addSpace(4); // Réduire l'espace de 6mm à 4mm
+  addSpace(4);
   doc.setFontSize(10);
 
-  // Tableau des prestations avec autoTable
   (doc as JsPDFWithAutoTable).autoTable({
     startY: y,
     head: [["Description", "Quantité", "Prix unitaire (€)", "Total (€)"]],
@@ -273,10 +233,8 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     margin: { left: margin, right: margin }
   });
 
-  // Récupérer la position Y après le tableau
-  y = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 6; // Réduire l'espace de 10mm à 6mm
+  y = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 6;
 
-  // Calcul des totaux
   const subtotal = calculateSubtotal(invoice.items);
   const discountAmount = invoice.discount
     ? calculateDiscount(invoice.items, invoice.discount)
@@ -288,7 +246,6 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     invoice.discount
   );
 
-  // Affichage des totaux
   const totalsX = pageWidth - margin - 60;
 
   doc.setFont("helvetica", "normal");
@@ -297,25 +254,24 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     align: "right"
   });
 
-  // Afficher la remise si elle existe
   if (invoice.discount && invoice.discount > 0) {
-    addSpace(6); // Réduire l'espace de 10mm à 6mm
-    doc.setTextColor(220, 53, 69); // Rouge pour la remise
+    addSpace(6);
+    doc.setTextColor(220, 53, 69);
     doc.text(`Remise (${invoice.discount}%):`, totalsX, y);
     doc.text(formatMoney(-discountAmount), pageWidth - margin, y, {
       align: "right"
     });
-    doc.setTextColor(0); // Réinitialiser la couleur
+    doc.setTextColor(0);
   }
 
   if (invoice.taxRate > 0) {
-    addSpace(6); // Réduire l'espace de 10mm à 6mm
+    addSpace(6);
     doc.text(`TVA (${invoice.taxRate}%):`, totalsX, y);
     doc.text(formatMoney(tax), pageWidth - margin, y, { align: "right" });
 
-    addSpace(3); // Réduire l'espace de 5mm à 3mm
+    addSpace(3);
     doc.line(totalsX, y, pageWidth - margin, y);
-    addSpace(3); // Réduire l'espace de 5mm à 3mm
+    addSpace(3);
 
     doc.setFont("helvetica", "bold");
     doc.text("Montant TTC:", totalsX, y);
@@ -323,9 +279,9 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
       align: "right"
     });
   } else {
-    addSpace(3); // Réduire l'espace de 5mm à 3mm
+    addSpace(3);
     doc.line(totalsX, y, pageWidth - margin, y);
-    addSpace(3); // Réduire l'espace de 5mm à 3mm
+    addSpace(6);
 
     doc.setFont("helvetica", "bold");
     doc.text("TOTAL:", totalsX, y);
@@ -333,7 +289,7 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
       align: "right"
     });
 
-    addSpace(6); // Réduire l'espace de 10mm à 6mm
+    addSpace(6);
     doc.setFontSize(9);
     doc.setFont("helvetica", "italic");
     doc.text("TVA non applicable, art. 293 B du CGI", totalsX, y, {
@@ -343,26 +299,21 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     doc.setFont("helvetica", "normal");
   }
 
-  // Notes
   if (invoice.notes) {
-    addSpace(12); // Réduire l'espace de 20mm à 12mm
+    addSpace(12);
     doc.setFont("helvetica", "bold");
-    doc.text("Notes:", margin, y);
-    addSpace(6); // Réduire l'espace de 10mm à 6mm
+    doc.text("Notes et conditions :", margin, y);
     doc.setFont("helvetica", "normal");
+    addSpace(6);
 
-    // Découper le texte des notes pour éviter les débordements
     const splitNotes = doc.splitTextToSize(
       invoice.notes,
       pageWidth - 2 * margin
     );
     doc.text(splitNotes, margin, y);
+    y += splitNotes.length * lineHeight;
   }
 
-  // Ajouter les notes et conditions
-  y += lineHeight * 2;
-
-  // Ajouter le mode de paiement s'il est spécifié
   if (invoice.paymentMethod) {
     doc.setFont("helvetica", "bold");
     doc.text("Mode de paiement :", margin, y);
@@ -371,22 +322,6 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     y += lineHeight;
   }
 
-  // Ajouter les notes s'il y en a
-  if (invoice.notes) {
-    doc.setFont("helvetica", "bold");
-    doc.text("Notes et conditions :", margin, y);
-    doc.setFont("helvetica", "normal");
-    y += lineHeight;
-
-    const splitNotes = doc.splitTextToSize(
-      invoice.notes,
-      pageWidth - margin * 2
-    );
-    doc.text(splitNotes, margin, y);
-    y += splitNotes.length * lineHeight;
-  }
-
-  // Pied de page
   const pageHeight = doc.internal.pageSize.getHeight();
   doc.setFontSize(8);
   doc.setTextColor(100);
@@ -399,14 +334,11 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
     }
   );
 
-  // Télécharger le PDF
-  // Ajouter la page de mentions légales avant de sauvegarder le PDF
   try {
     addLegalMentionsPage(doc, invoice.provider, invoice.documentType);
   } catch (error) {
     console.error("Erreur lors de l'ajout des mentions légales:", error);
   }
 
-  // Sauvegarder le PDF
   doc.save(`${invoice.documentType}-${invoice.documentNumber}.pdf`);
 };

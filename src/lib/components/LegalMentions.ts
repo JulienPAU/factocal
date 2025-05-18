@@ -1,16 +1,5 @@
-/**
- * Module de génération des mentions légales pour les factures et devis
- * Basé sur les exigences légales françaises pour les documents commerciaux
- */
-
 import type { Provider } from "$lib/types/invoice";
 
-/**
- * Génère les mentions légales pour un document PDF
- * @param provider Informations du prestataire
- * @param documentType Type de document (facture/devis)
- * @returns Le texte formaté des mentions légales
- */
 export function generateLegalMentions(
   provider: Provider,
   documentType: "facture" | "devis"
@@ -95,8 +84,7 @@ export function generateLegalMentions(
 
   mentions.push("MODALITÉS DE PAIEMENT");
   mentions.push(
-    `Les règlements peuvent être effectués par ${
-      provider.acceptedPayments || "virement bancaire, chèque ou carte bancaire"
+    `Les règlements peuvent être effectués par ${provider.acceptedPayments || "virement bancaire, chèque ou carte bancaire"
     }.`
   );
   if (provider.memberAga) {
@@ -132,12 +120,6 @@ export function generateLegalMentions(
   return mentions;
 }
 
-/**
- * Ajoute les mentions légales à un document PDF jsPDF
- * @param doc Document jsPDF
- * @param provider Informations du prestataire
- * @param documentType Type de document
- */
 export function addLegalMentionsPage(
   doc: {
     addPage: () => void;
@@ -161,26 +143,20 @@ export function addLegalMentionsPage(
   provider: Provider,
   documentType: "facture" | "devis"
 ): void {
-  // Ajouter une nouvelle page
   doc.addPage();
 
-  // Paramètres de mise en page
   const margin = 20;
   const pageWidth = doc.internal.pageSize.getWidth();
   let y = margin;
 
-  // Configuration du texte
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
 
-  // Récupérer les mentions légales
   const mentions = generateLegalMentions(provider, documentType);
 
-  // Ajouter les titres et les mentions
   for (let i = 0; i < mentions.length; i++) {
     const line = mentions[i];
 
-    // Titres en gras
     if (
       i === 0 ||
       line === "Identification du professionnel" ||
@@ -191,7 +167,6 @@ export function addLegalMentionsPage(
     ) {
       doc.setFont("helvetica", "bold");
 
-      // Le titre principal est plus grand
       if (i === 0) {
         doc.setFontSize(14);
         doc.text(line, pageWidth / 2, y, { align: "center" });
@@ -204,20 +179,16 @@ export function addLegalMentionsPage(
 
       doc.setFont("helvetica", "normal");
     }
-    // Ligne vide
     else if (line === "") {
       y += 5;
     }
-    // Texte normal
     else {
-      // Ajuster le texte pour qu'il rentre dans la page
       const splitText = doc.splitTextToSize(line, pageWidth - 2 * margin);
       doc.text(splitText, margin, y);
       y += 5 * splitText.length;
     }
   }
 
-  // Pied de page
   const pageHeight = doc.internal.pageSize.getHeight();
   doc.setFontSize(8);
   doc.setTextColor(100);
